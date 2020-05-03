@@ -56,9 +56,24 @@ func main() {
 	log.Debug("ping successful! we're good to go")
 
 	// get all devices
-	dvcs, err := c.GetDeadDevices()
+	log.Debug("getting all devices")
+	dvcs, err := c.GetAllDevices()
 	if err != nil {
 		log.Fatal(err)
 	}
-	p(dvcs)
+	log.Debugf("found total of %d devices", len(dvcs))
+
+	// get all unacked incidents
+	log.Debug("getting all unacked incidents")
+	unackedInc, maxUpdateID, err := c.GetUnacknowledgedIncidents(0)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Debugf("found total of %d unacked incidents; max incident ID %d", len(unackedInc), maxUpdateID)
+	for _, v := range unackedInc {
+		log.WithFields(log.Fields{
+			"UpdatedID": v.UpdatedID,
+		}).Debug(v.Summary)
+	}
+
 }

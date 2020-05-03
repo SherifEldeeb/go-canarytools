@@ -109,3 +109,20 @@ func (c Client) GetLiveDevices() (devices []Device, err error) {
 func (c Client) GetDeadDevices() (devices []Device, err error) {
 	return c.getDevices("dead")
 }
+
+// GetUnacknowledgedIncidents returns all Unacknowledged Incidents since lastID,
+// setting lastID to 0 returns all unack'd incidents,
+//
+func (c Client) GetUnacknowledgedIncidents(lastID int) (incidents []Incident, maxUpdatedID int, err error) {
+	var unackIncidents GetIncidentsResponse
+	err = c.decodeResponse("incidents/unacknowledged", &unackIncidents)
+	if err != nil {
+		return
+	}
+
+	if unackIncidents.Result != "success" {
+		return nil, 0, errors.New(unackIncidents.Message) // there will be a message, if it failed
+	}
+
+	return unackIncidents.Incidents, unackIncidents.MaxUpdatedID, nil
+}
