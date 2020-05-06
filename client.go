@@ -188,7 +188,7 @@ func (c *Client) Feed(incidnetsChan chan<- Incident) {
 		if err != nil {
 			log.Error(err) // TODO: fail gracefully
 		}
-		c.lastCheck = time.Now()
+		c.lastCheck = time.Now().UTC()
 		log.Debugf("found total of %d unacked incidents", len(unackedInc))
 		for _, v := range unackedInc {
 			log.WithFields(log.Fields{

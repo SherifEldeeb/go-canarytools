@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"sync"
 
 	"github.com/SherifEldeeb/canarytools"
 	log "github.com/sirupsen/logrus"
@@ -17,7 +18,7 @@ var (
 	// Console API input module
 	imConsoleAPIKey           = flag.String("apikey", "", "API Key")
 	imConsoleAPIDomain        = flag.String("domain", "", "canarytools domain")
-	imConsoleAPIFetchInterval = flag.Int("interval", 30, "alert fetch interval 'in seconds'")
+	imConsoleAPIFetchInterval = flag.Int("interval", 5, "alert fetch interval 'in seconds'")
 	// TODO: webhook
 	// TODO: syslog
 
@@ -112,15 +113,18 @@ func main() {
 	}
 	log.Debug("ping successful! we're good to go")
 
+	// bulding new TCP out
+	t, err := canarytools.NewTCPOutput(*omTCPUDPHost, *omTCPUDPPort)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"message": err,
+		}).Fatal("error during creating TCP Out client")
+	}
 	// feed'em
 	go c.Feed(incidentsChan)
-	
-	// get all devices
-	// log.Debug("getting all devices")
-	// dvcs, err := c.GetAllDevices()
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// log.Debugf("found total of %d devices", len(dvcs))
+	go t.Out(incidentsChan)
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	wg.Wait()
 
 }
