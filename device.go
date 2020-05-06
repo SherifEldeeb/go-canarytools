@@ -35,14 +35,3 @@ type Device struct {
 	UptimeAge                      string `json:"uptime_age,omitempty"`
 	Version                        string `json:"version,omitempty"`
 }
-
-// GetDevicesResponse is a response for all the device/* API
-type GetDevicesResponse struct {
-	Devices          []Device `json:"devices,omitempty"`
-	Feed             string   `json:"feed,omitempty"`
-	Message          string   `json:"message,omitempty"`
-	Result           string   `json:"result,omitempty"`
-	Updated          string   `json:"updated,omitempty"`
-	UpdatedStd       string   `json:"updated_std,omitempty"`
-	UpdatedTimestamp int64    `json:"updated_timestamp,omitempty"`
-}
