@@ -58,54 +58,55 @@ func main() {
 	// parse arguments
 	flag.Parse()
 
-	// setting log level
+	// create logger & setting log level
+	l := log.New()
 	switch *loglevel {
 	case "info":
-		log.SetLevel(log.InfoLevel)
+		l.SetLevel(log.InfoLevel)
 	case "warning":
-		log.SetLevel(log.WarnLevel)
+		l.SetLevel(log.WarnLevel)
 	case "debug":
-		log.SetLevel(log.DebugLevel)
+		l.SetLevel(log.DebugLevel)
 	default:
-		log.Fatal("unsupported log level (can be 'info', 'warning' or 'debug')")
+		l.Fatal("unsupported log level (can be 'info', 'warning' or 'debug')")
 	}
 
 	// few sanity checks
 	// valid input module?
 	_, ok := validFeederModules[*feederModule]
 	if !ok {
-		log.Fatal("invalid input module specifed")
+		l.Fatal("invalid input module specifed")
 	}
 	_, ok = validForwarderModules[*forwarderModule]
 	if !ok {
-		log.Fatal("invalid output module specifed")
+		l.Fatal("invalid output module specifed")
 	}
 
 	// Input modules look good?
 	switch *feederModule {
 	case "consoleapi":
 		if len(*fmConsoleAPIKey) != 32 {
-			log.Fatal("invalid API Key (length != 32)")
+			l.Fatal("invalid API Key (length != 32)")
 		}
 		if *fmConsoleAPIDomain == "" {
-			log.Fatal("domain must be provided")
+			l.Fatal("domain must be provided")
 		}
 		////////////////////
 		// start...
-		log.WithFields(log.Fields{
+		l.WithFields(log.Fields{
 			"domain":          *fmConsoleAPIDomain,
 			"fmConsoleAPIKey": (*fmConsoleAPIKey)[0:4] + "..." + (*fmConsoleAPIKey)[len(*fmConsoleAPIKey)-4:len(*fmConsoleAPIKey)],
 		}).Info("ChirpForwarder Configs")
 
 		// building a new clint, testing connection...
-		log.Debug("building new client and pinging console")
-		c, err := canarytools.NewClient(*fmConsoleAPIDomain, *fmConsoleAPIKey, *loglevel, *fmConsoleAPIFetchInterval)
+		l.Debug("building new client and pinging console")
+		c, err := canarytools.NewClient(*fmConsoleAPIDomain, *fmConsoleAPIKey, *fmConsoleAPIFetchInterval, l)
 		if err != nil {
-			log.WithFields(log.Fields{
+			l.WithFields(log.Fields{
 				"message": err,
 			}).Fatal("error during creating client, or pinging console")
 		}
-		log.Debug("ping successful! we're good to go")
+		l.Debug("ping successful! we're good to go")
 		feeder = c
 	}
 
@@ -113,9 +114,9 @@ func main() {
 	switch *forwarderModule {
 	case "tcp":
 		// bulding new TCP out
-		t, err := canarytools.NewTCPForwarder(*omTCPUDPHost, *omTCPUDPPort, *loglevel)
+		t, err := canarytools.NewTCPForwarder(*omTCPUDPHost, *omTCPUDPPort, l)
 		if err != nil {
-			log.WithFields(log.Fields{
+			l.WithFields(log.Fields{
 				"message": err,
 			}).Fatal("error during creating TCP Out client")
 		}
@@ -123,12 +124,17 @@ func main() {
 	}
 
 	// filter
-	filter = &canarytools.FilterNone{}
+	filter, err := canarytools.NewFilterNone(l)
+	if err != nil {
+		l.WithFields(log.Fields{
+			"message": err,
+		}).Fatal("error creating None filter")
+	}
 
 	//mapper
-	mapper, err := canarytools.NewMapperJSON(false, *loglevel)
+	mapper, err := canarytools.NewMapperJSON(false, l)
 	if err != nil {
-		log.WithFields(log.Fields{
+		l.WithFields(log.Fields{
 			"message": err,
 		}).Fatal("error creating JON Mapper")
 	}

@@ -14,24 +14,13 @@ type TCPForwarder struct {
 	host string
 	port int
 	l    *log.Logger
-
 	// TODO: TLS!
 }
 
-func NewTCPForwarder(host string, port int, loglevel string) (tcpforwarder *TCPForwarder, err error) {
+func NewTCPForwarder(host string, port int, l *log.Logger) (tcpforwarder *TCPForwarder, err error) {
 	tcpforwarder = &TCPForwarder{}
-	// logging config
-	tcpforwarder.l = log.New()
-	switch loglevel {
-	case "info":
-		tcpforwarder.l.SetLevel(log.InfoLevel)
-	case "warning":
-		tcpforwarder.l.SetLevel(log.WarnLevel)
-	case "debug":
-		tcpforwarder.l.SetLevel(log.DebugLevel)
-	default:
-		return nil, errors.New("unsupported log level (can be 'info', 'warning' or 'debug')")
-	}
+	tcpforwarder.l = l
+
 	if host == "" {
 		return nil, errors.New("host can't be empty")
 	}

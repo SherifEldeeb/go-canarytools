@@ -1,7 +1,7 @@
 package canarytools
 
 import (
-	"errors"
+	"fmt"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -11,26 +11,30 @@ type FilterNone struct {
 	l *log.Logger
 }
 
-func NewFilterNone(loglevel string) (filterNone *FilterNone, err error) {
+func NewFilterNone(l *log.Logger) (filterNone *FilterNone, err error) {
 	filterNone = &FilterNone{}
-	// logging config
-	filterNone.l = log.New()
-	switch loglevel {
-	case "info":
-		filterNone.l.SetLevel(log.InfoLevel)
-	case "warning":
-		filterNone.l.SetLevel(log.WarnLevel)
-	case "debug":
-		filterNone.l.SetLevel(log.DebugLevel)
-	default:
-		return nil, errors.New("unsupported log level (can be 'info', 'warning' or 'debug')")
-	}
+	filterNone.l = l
 	return
 }
 
 // Filter filters the incidents, in this case it simply passes them through
 func (fn FilterNone) Filter(incidnetsChan <-chan Incident, filteredIncidnetsChan chan<- Incident) {
+	fn.l.WithFields(log.Fields{
+		"source": "FilterNone",
+		"stage":  "filter",
+	}).Info("starting FilterNone")
+
 	for v := range incidnetsChan {
+		fn.l.WithFields(log.Fields{
+			"source":  "FilterNone",
+			"stage":   "filter",
+			"content": fmt.Sprintf("%#v", v),
+		}).Trace("passing through value")
+		fn.l.WithFields(log.Fields{
+			"source":   "FilterNone",
+			"stage":    "filter",
+			"Incidnet": v.Summary,
+		}).Debug("Filter Incident")
 		filteredIncidnetsChan <- v
 	}
 }

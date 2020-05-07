@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
-	"errors"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -27,21 +26,9 @@ type MapperJSON struct {
 }
 
 // NewMapperJSON creates a new MapperJSON
-func NewMapperJSON(escapeHTML bool, loglevel string) (mapperJSON *MapperJSON, err error) {
+func NewMapperJSON(escapeHTML bool, l *log.Logger) (mapperJSON *MapperJSON, err error) {
 	mapperJSON = &MapperJSON{}
-
-	// logging config
-	mapperJSON.l = log.New()
-	switch loglevel {
-	case "info":
-		mapperJSON.l.SetLevel(log.InfoLevel)
-	case "warning":
-		mapperJSON.l.SetLevel(log.WarnLevel)
-	case "debug":
-		mapperJSON.l.SetLevel(log.DebugLevel)
-	default:
-		return nil, errors.New("unsupported log level (can be 'info', 'warning' or 'debug')")
-	}
+	mapperJSON.l = l
 
 	// It'll work like this: JSON Encoder -> (byte slice <-> bytes.Buffer) -> bufio.Scanner -> scanner.Scan -> scanner.Text
 	// we do this to benefit from EscapeHTML, otherwise json.Marshal would have been easier.

@@ -25,20 +25,10 @@ type Client struct {
 }
 
 // NewClient creates a new client from domain & API Key
-func NewClient(domain, apikey, loglevel string, fetchInterval int) (c *Client, err error) {
+func NewClient(domain, apikey string, fetchInterval int, l *log.Logger) (c *Client, err error) {
 	c = &Client{}
-	// logging config
-	c.l = log.New()
-	switch loglevel {
-	case "info":
-		c.l.SetLevel(log.InfoLevel)
-	case "warning":
-		c.l.SetLevel(log.WarnLevel)
-	case "debug":
-		c.l.SetLevel(log.DebugLevel)
-	default:
-		return c, errors.New("unsupported log level (can be 'info', 'warning' or 'debug')")
-	}
+	c.l = l
+
 	c.fetchInterval = fetchInterval
 	c.httpclient = &http.Client{Timeout: 5 * time.Second} // TODO: provide ability to configure
 	c.domain = domain
