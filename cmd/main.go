@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"sync"
 
 	"github.com/SherifEldeeb/canarytools"
 	log "github.com/sirupsen/logrus"
@@ -10,15 +9,16 @@ import (
 
 var (
 	// General flags
-	inputModule  = flag.String("input", "consoleapi", "input module")
-	outputModule = flag.String("output", "tcp", "output module")
-	loglevel     = flag.String("loglevel", "info", "set loglevel, can be one of ('info', 'warning' or 'debug')")
+	feederModule    = flag.String("feeder", "consoleapi", "input module")
+	forwarderModule = flag.String("output", "tcp", "output module")
+	loglevel        = flag.String("loglevel", "info", "set loglevel, can be one of ('info', 'warning' or 'debug')")
+	thenWhat        = flag.String("then", "nothing", "what to do after getting an incident? ")
 
 	// INPUT MODULES
 	// Console API input module
-	imConsoleAPIKey           = flag.String("apikey", "", "API Key")
-	imConsoleAPIDomain        = flag.String("domain", "", "canarytools domain")
-	imConsoleAPIFetchInterval = flag.Int("interval", 5, "alert fetch interval 'in seconds'")
+	fmConsoleAPIKey           = flag.String("apikey", "", "API Key")
+	fmConsoleAPIDomain        = flag.String("domain", "", "canarytools domain")
+	fmConsoleAPIFetchInterval = flag.Int("interval", 5, "alert fetch interval 'in seconds'")
 	// TODO: webhook
 	// TODO: syslog
 
@@ -28,13 +28,22 @@ var (
 	omTCPUDPHost = flag.String("host", "127.0.0.1", "[output] host")
 )
 
+// interface placeholders
+var (
+	feeder    canarytools.Feeder
+	filter    canarytools.Filter
+	mapper    canarytools.Mapper
+	forwarder canarytools.Forwarder
+)
+
 // implemented modules
 var (
-	validInputModules = map[string]bool{
+	validFeederModules = map[string]bool{
 		"consoleapi": true,
 	}
-	validOutputModules = map[string]bool{
-		"tcp": true,
+	validForwarderModules = map[string]bool{
+		"tcp":  true,
+		"file": true,
 	}
 )
 
@@ -43,6 +52,8 @@ func main() {
 
 	// create chans
 	var incidentsChan = make(chan canarytools.Incident)
+	var filteredIncidentsChan = make(chan canarytools.Incident)
+	var outChan = make(chan []byte)
 
 	// parse arguments
 	flag.Parse()
@@ -61,70 +72,71 @@ func main() {
 
 	// few sanity checks
 	// valid input module?
-	_, ok := validInputModules[*inputModule]
+	_, ok := validFeederModules[*feederModule]
 	if !ok {
 		log.Fatal("invalid input module specifed")
 	}
-	_, ok = validOutputModules[*outputModule]
+	_, ok = validForwarderModules[*forwarderModule]
 	if !ok {
 		log.Fatal("invalid output module specifed")
 	}
 
 	// Input modules look good?
-	// var im interface{}
-	switch *inputModule {
+	switch *feederModule {
 	case "consoleapi":
-		if len(*imConsoleAPIKey) != 32 {
+		if len(*fmConsoleAPIKey) != 32 {
 			log.Fatal("invalid API Key (length != 32)")
 		}
-		if *imConsoleAPIDomain == "" {
+		if *fmConsoleAPIDomain == "" {
 			log.Fatal("domain must be provided")
 		}
-		// im = canarytools.Client{}
+		////////////////////
+		// start...
+		log.WithFields(log.Fields{
+			"domain":          *fmConsoleAPIDomain,
+			"fmConsoleAPIKey": (*fmConsoleAPIKey)[0:4] + "..." + (*fmConsoleAPIKey)[len(*fmConsoleAPIKey)-4:len(*fmConsoleAPIKey)],
+		}).Info("ChirpForwarder Configs")
+
+		// building a new clint, testing connection...
+		log.Debug("building new client and pinging console")
+		c, err := canarytools.NewClient(*fmConsoleAPIDomain, *fmConsoleAPIKey, *loglevel, *fmConsoleAPIFetchInterval)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"message": err,
+			}).Fatal("error during creating client, or pinging console")
+		}
+		log.Debug("ping successful! we're good to go")
+		feeder = c
 	}
 
 	// Output modules look good?
-	// var om interface{}
-	switch *outputModule {
+	switch *forwarderModule {
 	case "tcp":
-		if *omTCPUDPPort > 65535 || *omTCPUDPPort < 1 {
-			log.Fatal("invalid port number")
+		// bulding new TCP out
+		t, err := canarytools.NewTCPForwarder(*omTCPUDPHost, *omTCPUDPPort, *loglevel)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"message": err,
+			}).Fatal("error during creating TCP Out client")
 		}
-		if *omTCPUDPHost == "" {
-			log.Fatal("output host can't be empty")
-		}
-		// om = canarytools.Client{}
+		forwarder = t
 	}
 
-	////////////////////
-	// start...
-	log.WithFields(log.Fields{
-		"domain":          *imConsoleAPIDomain,
-		"imConsoleAPIKey": (*imConsoleAPIKey)[0:4] + "..." + (*imConsoleAPIKey)[len(*imConsoleAPIKey)-4:len(*imConsoleAPIKey)],
-	}).Info("ChirpForwarder Configs")
+	// filter
+	filter = &canarytools.FilterNone{}
 
-	// building a new clint, testing connection...
-	log.Debug("building new client and pinging console")
-	c, err := canarytools.NewClient(*imConsoleAPIDomain, *imConsoleAPIKey, *loglevel, *imConsoleAPIFetchInterval)
+	//mapper
+	mapper, err := canarytools.NewMapperJSON(false, *loglevel)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"message": err,
-		}).Fatal("error during creating client, or pinging console")
+		}).Fatal("error creating JON Mapper")
 	}
-	log.Debug("ping successful! we're good to go")
 
-	// bulding new TCP out
-	t, err := canarytools.NewTCPOutput(*omTCPUDPHost, *omTCPUDPPort)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"message": err,
-		}).Fatal("error during creating TCP Out client")
-	}
-	// feed'em
-	go c.Feed(incidentsChan)
-	go t.Out(incidentsChan)
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-	wg.Wait()
+	// All good, let's roll...
+	go feeder.Feed(incidentsChan)
+	go filter.Filter(incidentsChan, filteredIncidentsChan)
+	go mapper.Map(filteredIncidentsChan, outChan)
+	forwarder.Forward(outChan)
 
 }

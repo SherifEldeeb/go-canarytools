@@ -25,7 +25,8 @@ type Client struct {
 }
 
 // NewClient creates a new client from domain & API Key
-func NewClient(domain, apikey, loglevel string, fetchInterval int) (c Client, err error) {
+func NewClient(domain, apikey, loglevel string, fetchInterval int) (c *Client, err error) {
+	c = &Client{}
 	// logging config
 	c.l = log.New()
 	switch loglevel {
@@ -162,6 +163,7 @@ func (c Client) GetUnacknowledgedIncidents(since time.Time) (incidents []Inciden
 	ts = tt.Format("2006-01-02-15:04:05")
 	u := &url.Values{}
 	u.Add("newer_than", ts)
+	u.Add("shrink", "true")
 	err = c.decodeResponse("incidents/unacknowledged", u, &unackIncidents)
 	if err != nil {
 		return
