@@ -5,7 +5,6 @@ import (
 	"net"
 	"strconv"
 
-	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -43,7 +42,7 @@ func (t TCPForwarder) Forward(outChan <-chan []byte) {
 	for i := range outChan {
 		_, err := c.Write(i)
 		if err != nil {
-			logrus.Errorf("encoding: %s", string(i))
+			t.l.Errorf("encoding: %s", string(i))
 		}
 	}
 }

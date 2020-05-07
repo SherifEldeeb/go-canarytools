@@ -1,8 +1,6 @@
 package canarytools
 
 import (
-	"bufio"
-	"bytes"
 	"encoding/json"
 
 	log "github.com/sirupsen/logrus"
@@ -16,11 +14,11 @@ import (
 // In non-HTML requirements where the escaping interferes with the readability
 // of the output, setting escapeHTML to (false) disables this behavior.
 type MapperJSON struct {
+	// encoder    *json.Encoder
+	// buf        *bytes.Buffer
 	escapeHTML bool
-	encoder    *json.Encoder
-	buf        *bytes.Buffer
-	scanner    *bufio.Scanner
-	l          *log.Logger
+	// scanner *bufio.Scanner
+	l *log.Logger
 
 	// TODO: add stats
 }
@@ -29,29 +27,69 @@ type MapperJSON struct {
 func NewMapperJSON(escapeHTML bool, l *log.Logger) (mapperJSON *MapperJSON, err error) {
 	mapperJSON = &MapperJSON{}
 	mapperJSON.l = l
-
-	// It'll work like this: JSON Encoder -> (byte slice <-> bytes.Buffer) -> bufio.Scanner -> scanner.Scan -> scanner.Text
-	// we do this to benefit from EscapeHTML, otherwise json.Marshal would have been easier.
-	b := []byte{}
-	mapperJSON.buf = bytes.NewBuffer(b)
-	mapperJSON.encoder = json.NewEncoder(mapperJSON.buf)
-	mapperJSON.encoder.SetEscapeHTML(escapeHTML)
 	mapperJSON.escapeHTML = escapeHTML
-	mapperJSON.scanner = bufio.NewScanner(mapperJSON.buf)
-
 	return
 }
 
 // Map maps canary incidents to JSON
 func (mj MapperJSON) Map(filteredIncidnetsChan <-chan Incident, outChan chan<- []byte) {
-	go func() {
-		for i := range filteredIncidnetsChan {
-			mj.encoder.Encode(i)
+	// new method, till i fogure how to do the json.Encoder with buffer :/
+	for v := range filteredIncidnetsChan {
+		mj.l.WithFields(log.Fields{
+			"source":   "MapperJSON",
+			"stage":    "map",
+			"incident": v.Summary,
+		}).Info("JSON Marshaling incident")
+
+		j, err := json.Marshal(v)
+		if err != nil {
+			mj.l.WithFields(log.Fields{
+				"source": "MapperJSON",
+				"stage":  "map",
+				"err":    err,
+			}).Error("error marshaling value")
+			continue
 		}
-	}()
-	for mj.scanner.Scan() {
-		o := mj.scanner.Text()
-		outChan <- []byte(o)
+		outChan <- j
+
 	}
+
+	// It'll work like this: JSON Encoder -> (bytes.Buffer) -> bufio.Scanner -> scanner.Scan -> scanner.Text
+	// we do this to benefit from EscapeHTML, otherwise json.Marshal would have been easier.
+	// b := make([]byte, 1024*1024*5)
+	// buf := bytes.NewBuffer(b)
+	// enc := json.NewEncoder(buf)
+	// enc.SetEscapeHTML(mj.escapeHTML)
+
+	// go func(enc *json.Encoder) {
+	// 	for v := range filteredIncidnetsChan {
+	// 		// logging
+	// 		mj.l.WithFields(log.Fields{
+	// 			"source":  "MapperJSON",
+	// 			"stage":   "map",
+	// 			"content": fmt.Sprintf("%#v", v),
+	// 		}).Trace("JSON Map")
+
+	// 		mj.l.WithFields(log.Fields{
+	// 			"source":   "MapperJSON",
+	// 			"stage":    "map",
+	// 			"incident": v.Summary,
+	// 		}).Debug("JSON Map Encoded")
+
+	// 		enc.Encode(v)
+	// 	}
+	// }(enc)
+
+	// for buf.ReadString('\n') {
+	// 	o := sc.Text()
+
+	// 	mj.l.WithFields(log.Fields{
+	// 		"source":       "MapperJSON",
+	// 		"stage":        "map",
+	// 		"JSONIncident": o,
+	// 	}).Debug("JSON Encoded Incidnet - Scanner Read")
+
+	// 	outChan <- []byte(o)
+	// }
 
 }

@@ -16,20 +16,9 @@ type FileForwader struct {
 	l          *log.Logger
 }
 
-func NewFileForwader(filename, loglevel string, maxsize, maxbackups, maxage int, compress bool) (fileforwader *FileForwader, err error) {
+func NewFileForwader(filename string, maxsize, maxbackups, maxage int, compress bool, l *log.Logger) (fileforwader *FileForwader, err error) {
 	fileforwader = &FileForwader{}
-	// logging config
-	fileforwader.l = log.New()
-	switch loglevel {
-	case "info":
-		fileforwader.l.SetLevel(log.InfoLevel)
-	case "warning":
-		fileforwader.l.SetLevel(log.WarnLevel)
-	case "debug":
-		fileforwader.l.SetLevel(log.DebugLevel)
-	default:
-		return nil, errors.New("unsupported log level (can be 'info', 'warning' or 'debug')")
-	}
+	fileforwader.l = l
 
 	if filename == "" {
 		return nil, errors.New("filename can't be empty")
