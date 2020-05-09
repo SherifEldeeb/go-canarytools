@@ -2,6 +2,7 @@ package canarytools
 
 import (
 	"encoding/json"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -13,13 +14,13 @@ import (
 // arise when embedding JSON in HTML.
 // In non-HTML requirements where the escaping interferes with the readability
 // of the output, setting escapeHTML to (false) disables this behavior.
+// TODO: Fix!
 type MapperJSON struct {
 	// encoder    *json.Encoder
 	// buf        *bytes.Buffer
 	escapeHTML bool
 	// scanner *bufio.Scanner
 	l *log.Logger
-
 	// TODO: add stats
 }
 
@@ -50,7 +51,7 @@ func (mj MapperJSON) Map(filteredIncidnetsChan <-chan Incident, outChan chan<- [
 			}).Error("error marshaling value")
 			continue
 		}
-		outChan <- j
+		outChan <- []byte(strings.TrimSpace(string(j)) + "\n")
 
 	}
 

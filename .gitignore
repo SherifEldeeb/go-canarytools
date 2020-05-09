@@ -16,3 +16,4 @@
 cmd/canarytools.config
 .vscode/launch.json
 bs/
+cmd/*.json
