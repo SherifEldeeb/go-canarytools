@@ -133,7 +133,7 @@ func main() {
 
 		// building a new clint, testing connection...
 		l.Debug("building new client and pinging console")
-		c, err := canarytools.NewClient(*imConsoleAPIDomain, *imConsoleAPIKey, *imConsoleAPIFetchInterval, l)
+		c, err := canarytools.NewClient(*imConsoleAPIDomain, *imConsoleAPIKey, *thenWhat, *imConsoleAPIFetchInterval, l)
 		if err != nil {
 			l.WithFields(log.Fields{
 				"err": err,
@@ -186,6 +186,8 @@ func main() {
 			}).Fatal("error during creating File Out client")
 		}
 		forwarder = ef
+	default:
+		l.Fatal("unsupported output module")
 	}
 
 	// filter
@@ -209,5 +211,4 @@ func main() {
 	go filter.Filter(incidentsChan, filteredIncidentsChan)
 	go mapper.Map(filteredIncidentsChan, outChan)
 	forwarder.Forward(outChan)
-
 }

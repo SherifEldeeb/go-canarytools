@@ -22,10 +22,11 @@ type Client struct {
 	lastCheck     time.Time
 	errorCount    int
 	fetchInterval int
+	then          string
 }
 
 // NewClient creates a new client from domain & API Key
-func NewClient(domain, apikey string, fetchInterval int, l *log.Logger) (c *Client, err error) {
+func NewClient(domain, apikey, then string, fetchInterval int, l *log.Logger) (c *Client, err error) {
 	c = &Client{}
 	c.l = l
 
@@ -133,10 +134,11 @@ func (c Client) GetDeadDevices() (devices []Device, err error) {
 	return c.getDevices("dead")
 }
 
-// GetUnacknowledgedIncidents returns all Unacknowledged Incidents since time
-// secified, setting "since" to zero vaule (time.Time{}) returns all unack'd incidents,
-func (c Client) GetUnacknowledgedIncidents(since time.Time) (incidents []Incident, err error) {
-	var unackIncidents GetIncidentsResponse
+// getIncidents returns all Incidents since time specified, which is either
+// "all", or "unacknowledged".
+// setting "since" to zero vaule (time.Time{}) returns all incidents.
+func (c Client) getIncidents(which string, since time.Time) (incidents []Incident, err error) {
+	var inc GetIncidentsResponse
 	var ts string
 	var tt time.Time
 
@@ -154,16 +156,28 @@ func (c Client) GetUnacknowledgedIncidents(since time.Time) (incidents []Inciden
 	u := &url.Values{}
 	u.Add("newer_than", ts)
 	u.Add("shrink", "true")
-	err = c.decodeResponse("incidents/unacknowledged", u, &unackIncidents)
+	err = c.decodeResponse("incidents/"+which, u, &inc)
 	if err != nil {
 		return
 	}
 
-	if unackIncidents.Result != "success" {
-		return nil, errors.New(unackIncidents.Message) // there will be a message, if it failed
+	if inc.Result != "success" {
+		return nil, errors.New(inc.Message) // there will be a message, if it failed
 	}
 
-	return unackIncidents.Incidents, nil
+	return inc.Incidents, nil
+}
+
+// GetUnacknowledgedIncidents returns all Unacknowledged Incidents since time
+// secified, setting "since" to zero vaule (time.Time{}) returns all incidents
+func (c Client) GetUnacknowledgedIncidents(since time.Time) (incidents []Incident, err error) {
+	return c.getIncidents("unacknowledged", since)
+}
+
+// GetAllIncidents returns all Incidents since time
+// secified, setting "since" to zero vaule (time.Time{}) returns all incidents,
+func (c Client) GetAllIncidents(since time.Time) (incidents []Incident, err error) {
+	return c.getIncidents("all", since)
 }
 
 // Feed fetches incidents and feeds them to chan
@@ -179,6 +193,7 @@ func (c *Client) Feed(incidnetsChan chan<- Incident) {
 		unackedInc, err := c.GetUnacknowledgedIncidents(c.lastCheck)
 		if err != nil {
 			log.Error(err) // TODO: fail gracefully
+			continue
 		}
 		c.lastCheck = time.Now().UTC()
 		log.Debugf("found total of %d unacked incidents", len(unackedInc))

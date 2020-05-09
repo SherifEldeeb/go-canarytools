@@ -18,3 +18,7 @@ type GetDevicesResponse struct {
 	UpdatedStd       string   `json:"updated_std,omitempty"`
 	UpdatedTimestamp int64    `json:"updated_timestamp,omitempty"`
 }
+
+// POST https://111.canary.tools/api/incident/acknowledge
+// application/x-www-form-urlencoded; charset=UTF-8
+// incident_key: incident:mssqllogin:35647bdf2a42b1b44c397ade:221.208.204.112:1589021675
