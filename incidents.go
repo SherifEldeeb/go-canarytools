@@ -14,14 +14,14 @@ type GetIncidentsResponse struct {
 
 // Incident is an incident, returned from the incidnets API
 type Incident struct {
-	Description interface{} `json:"description,omitempty"` // TODO: this varies greatly!
-	HashID      string      `json:"hash_id,omitempty"`
-	ID          string      `json:"id,omitempty"`
-	Summary     string      `json:"summary,omitempty"`
-	Updated     string      `json:"updated,omitempty"`
-	UpdatedID   int         `json:"updated_id,omitempty"`
-	UpdatedStd  string      `json:"updated_std,omitempty"`
-	UpdatedTime string      `json:"updated_time,omitempty"`
+	Description map[string]interface{} `json:"description,omitempty"` // TODO: this varies greatly!
+	HashID      string                 `json:"hash_id,omitempty"`
+	ID          string                 `json:"id,omitempty"`
+	Summary     string                 `json:"summary,omitempty"`
+	Updated     string                 `json:"updated,omitempty"`
+	UpdatedID   int                    `json:"updated_id,omitempty"`
+	UpdatedStd  string                 `json:"updated_std,omitempty"`
+	UpdatedTime string                 `json:"updated_time,omitempty"`
 }
 
 // Description contains details about incidents

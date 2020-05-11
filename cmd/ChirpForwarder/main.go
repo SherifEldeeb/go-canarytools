@@ -17,8 +17,9 @@ var (
 	feederModule    = flag.String("feeder", "consoleapi", "input module")
 	forwarderModule = flag.String("output", "tcp", "output module")
 	loglevel        = flag.String("loglevel", "info", "set loglevel, can be one of ('info', 'warning' or 'debug')")
-	thenWhat        = flag.String("then", "nothing", "what to do after getting an incident? ")
-	sinceWhen       = flag.String("since", "2000-01-01 00:00:00", "get events newer than this time 'yyyy-mm-dd HH:MM:SS'")
+	thenWhat        = flag.String("then", "nothing", "what to do after getting an incident? can be one of ('nothing', or 'ack')")
+	sinceWhenString = flag.String("since", "2000-01-01 00:00:00", "get events newer than this time; format:'yyyy-mm-dd HH:MM:SS'")
+	whichIncidents  = flag.String("which", "unacknowledged", "which incidents to fetch? can be one of ('all', or 'unacknowledged')")
 
 	// INPUT MODULES
 	// Console API input module
@@ -133,7 +134,7 @@ func main() {
 
 		// building a new clint, testing connection...
 		l.Debug("building new client and pinging console")
-		c, err := canarytools.NewClient(*imConsoleAPIDomain, *imConsoleAPIKey, *thenWhat, *imConsoleAPIFetchInterval, l)
+		c, err := canarytools.NewClient(*imConsoleAPIDomain, *imConsoleAPIKey, *thenWhat, *sinceWhenString, *whichIncidents, *imConsoleAPIFetchInterval, l)
 		if err != nil {
 			l.WithFields(log.Fields{
 				"err": err,

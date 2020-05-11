@@ -14,22 +14,28 @@ import (
 
 // Client is a canarytools client, which is used to issue requests to the API
 type Client struct {
-	domain        string
-	apikey        string
-	baseURL       *url.URL
-	httpclient    *http.Client
-	l             *log.Logger
-	lastCheck     time.Time
-	errorCount    int
-	fetchInterval int
-	then          string
+	domain         string
+	apikey         string
+	baseURL        *url.URL
+	httpclient     *http.Client
+	l              *log.Logger
+	lastCheck      time.Time
+	errorCount     int
+	fetchInterval  int
+	thenWhat       string
+	whichIncidents string
 }
 
 // NewClient creates a new client from domain & API Key
-func NewClient(domain, apikey, then string, fetchInterval int, l *log.Logger) (c *Client, err error) {
+func NewClient(domain, apikey, thenWhat, sinceWhen, whichIncidents string, fetchInterval int, l *log.Logger) (c *Client, err error) {
 	c = &Client{}
 	c.l = l
-
+	c.thenWhat = thenWhat
+	c.whichIncidents = whichIncidents
+	c.lastCheck, err = time.Parse("2006-01-02 15:04:05", sinceWhen)
+	if err != nil {
+		return
+	}
 	c.fetchInterval = fetchInterval
 	c.httpclient = &http.Client{Timeout: 5 * time.Second} // TODO: provide ability to configure
 	c.domain = domain
@@ -72,16 +78,27 @@ func (c Client) api(endpoint string, params *url.Values) (fullURL *url.URL, err 
 }
 
 // decodeResponse decodes reponses into target interfaces
-func (c Client) decodeResponse(endpoint string, params *url.Values, target interface{}) (err error) {
+func (c Client) decodeResponse(endpoint, verb string, params *url.Values, target interface{}) (err error) {
 	fullURL, err := c.api(endpoint, params)
 	if err != nil {
 		return
 	}
 
 	c.l.WithFields(log.Fields{
-		"url": fullURL.String(), // TODO: remove sensitive data
+		"url":      fullURL.String(), // TODO: remove sensitive data
+		"HTTPverb": verb,
 	}).Debug("hitting API")
-	resp, err := c.httpclient.Get(fullURL.String())
+
+	var resp = &http.Response{}
+	switch verb {
+	case "GET":
+		resp, err = c.httpclient.Get(fullURL.String())
+	case "POST":
+		resp, err = c.httpclient.Post(fullURL.String(), "application/x-www-form-urlencoded", nil)
+	case "DELETE":
+		req, _ := http.NewRequest("DELETE", fullURL.String(), nil)
+		resp, err = c.httpclient.Do(req)
+	}
 	if err != nil {
 		return
 	}
@@ -93,7 +110,7 @@ func (c Client) decodeResponse(endpoint string, params *url.Values, target inter
 // Ping tests connection to the console, and validity of connection params
 func (c Client) Ping() (err error) {
 	var pr PingResponse
-	err = c.decodeResponse("ping", nil, &pr)
+	err = c.decodeResponse("ping", "GET", nil, &pr)
 	if err != nil {
 		return
 	}
@@ -108,7 +125,7 @@ func (c Client) Ping() (err error) {
 // getDevices returns  devices
 func (c Client) getDevices(which string) (devices []Device, err error) {
 	var getdevicesresponse GetDevicesResponse
-	err = c.decodeResponse("devices/"+which, nil, &getdevicesresponse)
+	err = c.decodeResponse("devices/"+which, "GET", nil, &getdevicesresponse)
 	if err != nil {
 		return
 	}
@@ -156,7 +173,7 @@ func (c Client) getIncidents(which string, since time.Time) (incidents []Inciden
 	u := &url.Values{}
 	u.Add("newer_than", ts)
 	u.Add("shrink", "true")
-	err = c.decodeResponse("incidents/"+which, u, &inc)
+	err = c.decodeResponse("incidents/"+which, "GET", u, &inc)
 	if err != nil {
 		return
 	}
@@ -182,26 +199,76 @@ func (c Client) GetAllIncidents(since time.Time) (incidents []Incident, err erro
 
 // Feed fetches incidents and feeds them to chan
 func (c *Client) Feed(incidnetsChan chan<- Incident) {
-	log.Debug("getting all unacked incidents")
 	ticker := time.NewTicker(time.Duration(c.fetchInterval) * time.Second)
 
 	for range ticker.C {
 		// get all unacked incidents
-		log.WithFields(log.Fields{
-			"lastCheck": c.lastCheck,
-		}).Debug("getting all unacked incidents")
-		unackedInc, err := c.GetUnacknowledgedIncidents(c.lastCheck)
+		c.l.WithFields(log.Fields{
+			"lastCheck":      c.lastCheck,
+			"whichIncidents": c.whichIncidents,
+		}).Debug("getting incidents")
+		var incidents = []Incident{}
+		var err error
+		switch c.whichIncidents {
+		case "all":
+			incidents, err = c.GetAllIncidents(c.lastCheck)
+		case "unacknowledged":
+			incidents, err = c.GetUnacknowledgedIncidents(c.lastCheck)
+		default:
+			c.l.WithFields(log.Fields{
+				"lastCheck":      c.lastCheck,
+				"whichIncidents": c.whichIncidents,
+			}).Fatal("unknown whichIncident")
+		}
 		if err != nil {
 			log.Error(err) // TODO: fail gracefully
 			continue
 		}
 		c.lastCheck = time.Now().UTC()
-		log.Debugf("found total of %d unacked incidents", len(unackedInc))
-		for _, v := range unackedInc {
+		log.Debugf("found total of %d unacked incidents", len(incidents))
+		for _, v := range incidents {
 			log.WithFields(log.Fields{
 				"UpdatedID": v.UpdatedID,
 			}).Debug(v.Summary)
 			incidnetsChan <- v
+			if c.thenWhat == "ack" {
+				a, ok := v.Description["acknowledged"]
+				if ok {
+					if a == "False" {
+						err = c.AckIncident(v.ID)
+					}
+				}
+			}
 		}
 	}
+}
+
+// AckIncident acknowledges incident
+func (c *Client) AckIncident(incident string) (err error) {
+	c.l.WithFields(log.Fields{
+		"source":   "ConsoleClient",
+		"stage":    "ack",
+		"incident": incident,
+	}).Debug("Client Ack Incident")
+
+	uv := &url.Values{}
+	uv.Add("incident", incident)
+
+	br := &BasicResponse{}
+	err = c.decodeResponse("incident/acknowledge", "POST", uv, br)
+	if err != nil {
+		c.l.WithFields(log.Fields{
+			"source": "ConsoleClient",
+			"stage":  "ack",
+			"err":    err,
+		}).Error("Client error Ack Incident")
+		return
+	}
+	c.l.WithFields(log.Fields{
+		"source":   "ConsoleClient",
+		"stage":    "ack",
+		"incident": incident,
+	}).Info("Client successfully Ack'd Incident")
+
+	return
 }

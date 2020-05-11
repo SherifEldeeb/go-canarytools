@@ -35,14 +35,23 @@ func (t TCPForwarder) Forward(outChan <-chan []byte) {
 	connect := t.host + ":" + strconv.Itoa(t.port)
 	c, err := net.Dial("tcp", connect)
 	if err != nil {
-		return
+		t.l.WithFields(log.Fields{
+			"source": "TCPForwarder",
+			"stage":  "forward",
+			"err":    err,
+		}).Fatal("Forward error dialing")
 	}
 	defer c.Close()
 
 	for i := range outChan {
 		_, err := c.Write(i)
 		if err != nil {
-			t.l.Errorf("encoding: %s", string(i))
+			t.l.WithFields(log.Fields{
+				"source": "TCPForwarder",
+				"stage":  "forward",
+				"err":    err,
+			}).Fatal("Forward error writing to socket")
+			return
 		}
 	}
 }
