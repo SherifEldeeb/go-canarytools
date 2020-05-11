@@ -18,8 +18,11 @@ var (
 	forwarderModule = flag.String("output", "tcp", "output module")
 	loglevel        = flag.String("loglevel", "info", "set loglevel, can be one of ('info', 'warning' or 'debug')")
 	thenWhat        = flag.String("then", "nothing", "what to do after getting an incident? can be one of ('nothing', or 'ack')")
-	sinceWhenString = flag.String("since", "2000-01-01 00:00:00", "get events newer than this time; format:'yyyy-mm-dd HH:MM:SS'")
-	whichIncidents  = flag.String("which", "unacknowledged", "which incidents to fetch? can be one of ('all', or 'unacknowledged')")
+	sinceWhenString = flag.String("since", "", `get events newer than this time.
+	format has to be like this: 'yyyy-MM-dd HH:mm:ss'
+	if nothing provided, it will check value from '.canary.lastcheck' file,
+	if .canary.lastcheck file does not exist, it will default to events from last 7 days`)
+	whichIncidents = flag.String("which", "unacknowledged", "which incidents to fetch? can be one of ('all', or 'unacknowledged')")
 
 	// INPUT MODULES
 	// Console API input module

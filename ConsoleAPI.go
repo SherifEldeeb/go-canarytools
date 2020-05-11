@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"time"
 
@@ -14,28 +16,54 @@ import (
 
 // Client is a canarytools client, which is used to issue requests to the API
 type Client struct {
-	domain         string
-	apikey         string
-	baseURL        *url.URL
-	httpclient     *http.Client
-	l              *log.Logger
-	lastCheck      time.Time
-	errorCount     int
-	fetchInterval  int
-	thenWhat       string
-	whichIncidents string
+	domain            string
+	apikey            string
+	baseURL           *url.URL
+	httpclient        *http.Client
+	l                 *log.Logger
+	lastCheck         time.Time
+	lastCheckRegister *os.File
+	errorCount        int
+	fetchInterval     int
+	thenWhat          string
+	whichIncidents    string
 }
 
 // NewClient creates a new client from domain & API Key
 func NewClient(domain, apikey, thenWhat, sinceWhen, whichIncidents string, fetchInterval int, l *log.Logger) (c *Client, err error) {
 	c = &Client{}
 	c.l = l
+	// time parsing
+	var t time.Time
+	switch {
+	// if valid time has been provided, it superseeds everything else
+	// in this case, we either get a valid date, or we fail miserably.
+	case sinceWhen != "":
+		t, err = time.Parse("2006-01-02 15:04:05", sinceWhen)
+		if err != nil {
+			return
+		}
+	// if nothing provided, we look for '.canary.lastcheck' file
+	case sinceWhen == "":
+		if _, err = os.Stat(".canary.lastcheck"); err == nil { // file exists, and we have no issues reading it
+			var b = []byte{}
+			b, err = ioutil.ReadFile(".canary.lastcheck")
+			if err != nil {
+				return
+			}
+			// now we shoould have the content in that file
+			s := string(b)
+			t, err = time.Parse("2006-01-02 15:04:05", s)
+			if err != nil {
+				return
+			}
+		} else { // file doesn't exist, we default to (today - 7 days).
+			t = time.Now().AddDate(0, 0, -7).UTC()
+		}
+	}
+	c.lastCheck = t
 	c.thenWhat = thenWhat
 	c.whichIncidents = whichIncidents
-	c.lastCheck, err = time.Parse("2006-01-02 15:04:05", sinceWhen)
-	if err != nil {
-		return
-	}
 	c.fetchInterval = fetchInterval
 	c.httpclient = &http.Client{Timeout: 5 * time.Second} // TODO: provide ability to configure
 	c.domain = domain
@@ -48,6 +76,27 @@ func NewClient(domain, apikey, thenWhat, sinceWhen, whichIncidents string, fetch
 
 	c.l.Debug("pinging console...")
 	err = c.Ping()
+	if err != nil {
+		return
+	}
+	// write lastcheck register
+	c.lastCheckRegister, err = os.Create(".canary.lastcheck")
+	if err != nil {
+		return
+	}
+	return
+}
+
+func (c *Client) WriteLastCheckRegister(t time.Time) (err error) {
+	err = c.lastCheckRegister.Truncate(0)
+	if err != nil {
+		return
+	}
+	_, err = c.lastCheckRegister.Seek(0, 0)
+	if err != nil {
+		return
+	}
+	_, err = c.lastCheckRegister.WriteString(t.Format("2006-01-02 15:04:05"))
 	return
 }
 
@@ -240,6 +289,15 @@ func (c *Client) Feed(incidnetsChan chan<- Incident) {
 				}
 			}
 		}
+		// update register
+		err = c.WriteLastCheckRegister(c.lastCheck)
+		if err != nil {
+			c.l.WithFields(log.Fields{
+				"lastCheck": c.lastCheck,
+				"err":       err,
+			}).Fatal("error writing lastcheck register file")
+		}
+
 	}
 }
 
