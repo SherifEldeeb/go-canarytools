@@ -21,6 +21,12 @@ type Mapper interface {
 
 // Forwarder interface sends the incidnets to their destination
 type Forwarder interface {
-	Forward(outChan <-chan []byte)
+	Forward(outChan <-chan []byte, incidentAckerChan chan<- []byte)
+	// TODO: add stats
+}
+
+// IncidentAcker interface acks incidents
+type IncidentAcker interface {
+	AckIncidents(ackedIncident <-chan []byte)
 	// TODO: add stats
 }

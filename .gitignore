@@ -13,8 +13,9 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
-cmd/canarytools.config
 .vscode/launch.json
 bs/
 cmd/*.json
 cmd/ChirpForwarder/.canary.lastcheck
+canarytools.config
+cmd/ChirpForwarder/certs/

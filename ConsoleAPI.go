@@ -55,7 +55,10 @@ func NewClient(domain, apikey, thenWhat, sinceWhen, whichIncidents string, fetch
 			s := string(b)
 			t, err = time.Parse("2006-01-02 15:04:05", s)
 			if err != nil {
-				return
+				c.l.WithFields(log.Fields{
+					"err": err,
+				}).Error("error parsing time from .canary.lastcheck, setting default time (-7days)!")
+				t = time.Now().AddDate(0, 0, -7).UTC()
 			}
 		} else { // file doesn't exist, we default to (today - 7 days).
 			t = time.Now().AddDate(0, 0, -7).UTC()
@@ -280,14 +283,14 @@ func (c *Client) Feed(incidnetsChan chan<- Incident) {
 				"UpdatedID": v.UpdatedID,
 			}).Debug(v.Summary)
 			incidnetsChan <- v
-			if c.thenWhat == "ack" {
-				a, ok := v.Description["acknowledged"]
-				if ok {
-					if a == "False" {
-						err = c.AckIncident(v.ID)
-					}
-				}
-			}
+			// if c.thenWhat == "ack" {
+			// 	a, ok := v.Description["acknowledged"]
+			// 	if ok {
+			// 		if a == "False" {
+			// 			err = c.AckIncident(v.ID)
+			// 		}
+			// 	}
+			// }
 		}
 		// update register
 		err = c.WriteLastCheckRegister(c.lastCheck)
@@ -298,6 +301,28 @@ func (c *Client) Feed(incidnetsChan chan<- Incident) {
 			}).Fatal("error writing lastcheck register file")
 		}
 
+	}
+}
+
+func (c *Client) AckIncidents(ackedIncident <-chan []byte) {
+	for v := range ackedIncident {
+		var incident Incident
+		err := json.Unmarshal(v, &incident)
+		if err != nil {
+			c.l.WithFields(log.Fields{
+				"source": "ConsoleClient",
+				"stage":  "ack",
+				"err":    err,
+			}).Error("Client error Ack Incident")
+			continue
+		}
+		// do it
+		a, ok := incident.Description["acknowledged"]
+		if ok {
+			if a == "False" {
+				err = c.AckIncident(incident.ID)
+			}
+		}
 	}
 }
 

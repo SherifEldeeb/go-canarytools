@@ -1,6 +1,7 @@
 package canarytools
 
 import (
+	"crypto/tls"
 	"errors"
 	"net"
 	"strconv"
@@ -10,15 +11,19 @@ import (
 
 // TCPForwarder
 type TCPForwarder struct {
-	host string
-	port int
-	l    *log.Logger
+	host      string
+	port      int
+	l         *log.Logger
+	tlsConfig *tls.Config
+	sslUseSSL bool
 	// TODO: TLS!
 }
 
-func NewTCPForwarder(host string, port int, l *log.Logger) (tcpforwarder *TCPForwarder, err error) {
+func NewTCPForwarder(host string, port int, tlsConfig *tls.Config, sslUseSSL bool, l *log.Logger) (tcpforwarder *TCPForwarder, err error) {
 	tcpforwarder = &TCPForwarder{}
 	tcpforwarder.l = l
+	tcpforwarder.sslUseSSL = sslUseSSL
+	tcpforwarder.tlsConfig = tlsConfig
 
 	if host == "" {
 		return nil, errors.New("host can't be empty")
@@ -31,20 +36,34 @@ func NewTCPForwarder(host string, port int, l *log.Logger) (tcpforwarder *TCPFor
 	return
 }
 
-func (t TCPForwarder) Forward(outChan <-chan []byte) {
-	connect := t.host + ":" + strconv.Itoa(t.port)
-	c, err := net.Dial("tcp", connect)
-	if err != nil {
-		t.l.WithFields(log.Fields{
-			"source": "TCPForwarder",
-			"stage":  "forward",
-			"err":    err,
-		}).Fatal("Forward error dialing")
-	}
-	defer c.Close()
+func (t TCPForwarder) Forward(outChan <-chan []byte, incidentAckerChan chan<- []byte) {
+	var conn net.Conn
+	var err error
 
-	for i := range outChan {
-		_, err := c.Write(i)
+	connect := t.host + ":" + strconv.Itoa(t.port)
+	// using SSL/TLS?
+	if t.sslUseSSL {
+		conn, err = tls.Dial("tcp", connect, t.tlsConfig)
+		if err != nil {
+			t.l.WithFields(log.Fields{
+				"err":  err,
+				"host": connect,
+			}).Fatalf("error dialing TLS")
+		}
+	} else {
+		conn, err = net.Dial("tcp", connect)
+		if err != nil {
+			t.l.WithFields(log.Fields{
+				"source": "TCPForwarder",
+				"stage":  "forward",
+				"err":    err,
+			}).Fatal("Forward error dialing")
+		}
+	}
+	defer conn.Close()
+
+	for v := range outChan {
+		_, err := conn.Write(v)
 		if err != nil {
 			t.l.WithFields(log.Fields{
 				"source": "TCPForwarder",
@@ -53,5 +72,7 @@ func (t TCPForwarder) Forward(outChan <-chan []byte) {
 			}).Fatal("Forward error writing to socket")
 			return
 		}
+		incidentAckerChan <- v
+
 	}
 }

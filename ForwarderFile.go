@@ -39,7 +39,7 @@ func NewFileForwader(filename string, maxsize, maxbackups, maxage int, compress 
 }
 
 // Forward writes incidents to file
-func (f FileForwader) Forward(outChan <-chan []byte) {
+func (f FileForwader) Forward(outChan <-chan []byte, incidentAckerChan chan<- []byte) {
 	for v := range outChan {
 		n, err := f.lj.Write(v)
 		if err != nil {
@@ -55,5 +55,7 @@ func (f FileForwader) Forward(outChan <-chan []byte) {
 			"stage":  "forward",
 			"bytes":  n,
 		}).Info("FileOut incident written")
+
+		incidentAckerChan <- v
 	}
 }

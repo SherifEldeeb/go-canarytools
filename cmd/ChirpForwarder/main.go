@@ -2,7 +2,9 @@ package main
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"flag"
+	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -23,6 +25,14 @@ var (
 	if nothing provided, it will check value from '.canary.lastcheck' file,
 	if .canary.lastcheck file does not exist, it will default to events from last 7 days`)
 	whichIncidents = flag.String("which", "unacknowledged", "which incidents to fetch? can be one of ('all', or 'unacknowledged')")
+
+	// SSL/TLS Client configs
+	// used by TCP & Elastic output
+	sslUseSSL       = flag.Bool("ssl", false, "[SSL/TLS CLIENT] are we using SSL/TLS? setting this to true enables encrypted clinet configs")
+	sslSkipInsecure = flag.Bool("insecure", false, "[SSL/TLS CLIENT] ignore cert errors")
+	sslCA           = flag.String("sslclientca", "certs/ca.crt", "[SSL/TLS CLIENT] path to client rusted CA certificate file")
+	sslKey          = flag.String("sslclientkey", "certs/cert.key", "[SSL/TLS CLIENT] path to client SSL/TLS Key  file")
+	sslCert         = flag.String("sslclientcert", "certs/cert.crt", "[SSL/TLS CLIENT] path to client SSL/TLS cert  file")
 
 	// INPUT MODULES
 	// Console API input module
@@ -55,10 +65,11 @@ var (
 
 // interface placeholders
 var (
-	feeder    canarytools.Feeder
-	filter    canarytools.Filter
-	mapper    canarytools.Mapper
-	forwarder canarytools.Forwarder
+	feeder        canarytools.Feeder
+	incidentAcker canarytools.IncidentAcker
+	filter        canarytools.Filter
+	mapper        canarytools.Mapper
+	forwarder     canarytools.Forwarder
 )
 
 // implemented modules
@@ -85,13 +96,14 @@ func main() {
 
 	log.Info("starting canary ChirpForwarder")
 
+	// parse arguments
+	flag.Parse()
+
 	// create chans
 	var incidentsChan = make(chan canarytools.Incident)
 	var filteredIncidentsChan = make(chan canarytools.Incident)
 	var outChan = make(chan []byte)
-
-	// parse arguments
-	flag.Parse()
+	var incidentAckerChan = make(chan []byte)
 
 	// create logger & setting log level
 	l := log.New()
@@ -145,13 +157,51 @@ func main() {
 		}
 		l.Debug("ping successful! we're good to go")
 		feeder = c
+		incidentAcker = c
+	}
+
+	// Prepping SSL/TLS configs
+	var tlsConfig = &tls.Config{}
+	if *sslUseSSL {
+		// ignore cert verification errors?
+		tlsConfig.InsecureSkipVerify = *sslSkipInsecure
+		// custom CA?
+		if *sslCA != "" {
+			// Get the SystemCertPool, continue with an empty pool on error
+			rootCAs, _ := x509.SystemCertPool()
+			if rootCAs == nil {
+				rootCAs = x509.NewCertPool()
+			}
+			// Read in the cert file
+			certs, err := ioutil.ReadFile(*sslCA)
+			if err != nil {
+				l.WithFields(log.Fields{
+					"err":    err,
+					"cafile": *sslCA,
+				}).Fatal("Failed to read CA file")
+			}
+			// Append our cert to the system pool
+			if ok := rootCAs.AppendCertsFromPEM(certs); !ok {
+				l.Fatal("couldn't add CA cert! (file might be improperly formatted)")
+			}
+			tlsConfig.RootCAs = rootCAs
+		}
+		// custom key + cert?
+		if *sslKey != "" && *sslCert != "" {
+			// Load client cert
+			clientCert, err := tls.LoadX509KeyPair(*sslCert, *sslKey)
+			if err != nil {
+				l.Fatal(err)
+			}
+			tlsConfig.Certificates = []tls.Certificate{clientCert}
+		}
 	}
 
 	// Output modules look good?
 	switch *forwarderModule {
 	case "tcp":
 		// bulding new TCP out
-		t, err := canarytools.NewTCPForwarder(*omTCPUDPHost, *omTCPUDPPort, l)
+		t, err := canarytools.NewTCPForwarder(*omTCPUDPHost, *omTCPUDPPort, tlsConfig, *sslUseSSL, l)
 		if err != nil {
 			l.WithFields(log.Fields{
 				"err": err,
@@ -177,10 +227,8 @@ func main() {
 			APIKey:    *omElasticCloudAPIKey,
 			Transport: &http.Transport{
 				MaxIdleConnsPerHost:   10,
-				ResponseHeaderTimeout: time.Second,
-				TLSClientConfig: &tls.Config{
-					InsecureSkipVerify: true,
-				},
+				ResponseHeaderTimeout: time.Duration(3) * time.Second,
+				TLSClientConfig:       tlsConfig,
 			},
 		}
 		ef, err := canarytools.NewElasticForwarder(cfg, *omElasticIndex, l)
@@ -212,7 +260,8 @@ func main() {
 
 	// All good, let's roll...
 	go feeder.Feed(incidentsChan)
+	go incidentAcker.AckIncidents(incidentAckerChan)
 	go filter.Filter(incidentsChan, filteredIncidentsChan)
 	go mapper.Map(filteredIncidentsChan, outChan)
-	forwarder.Forward(outChan)
+	forwarder.Forward(outChan, incidentAckerChan)
 }

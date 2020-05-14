@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"strconv"
 	"time"
 
@@ -74,7 +75,7 @@ func NewElasticForwarder(cfg elasticsearch.Config, index string, l *log.Logger) 
 	return
 }
 
-func (ef ElasticForwarder) Forward(outChan <-chan []byte) {
+func (ef ElasticForwarder) Forward(outChan <-chan []byte, incidentAckerChan chan<- []byte) {
 	for i := range outChan {
 		var indexname = ef.index + "-"                          // preparing index name canarychirps-yyyy.MM.dd
 		var indexsuffix = time.Now().UTC().Format("2006.01.02") // preparing index suffix canarychirps-yyyy.MM.dd
@@ -115,7 +116,7 @@ func (ef ElasticForwarder) Forward(outChan <-chan []byte) {
 				"err":    err,
 			}).Error("Forward error marshaling incident")
 		}
-		buf := bytes.NewBuffer(b)
+		buf := bytes.NewReader(b)
 		if err != nil {
 			ef.l.WithFields(log.Fields{
 				"source": "ElasticForwarder",
@@ -142,5 +143,10 @@ func (ef ElasticForwarder) Forward(outChan <-chan []byte) {
 			continue
 		}
 		defer res.Body.Close()
+		// add to incident acker
+
+		buf.Seek(0, 0)
+		i, _ := ioutil.ReadAll(buf)
+		incidentAckerChan <- i
 	}
 }
