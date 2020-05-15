@@ -118,9 +118,9 @@ func popultaeVarsFromEnv() {
 func populateVarsFromFlags() {
 	// General flags
 	flag.StringVar(&feederModule, "feeder", "consoleapi", "input module")
-	flag.StringVar(&forwarderModule, "output", "tcp", "output module")
-	flag.StringVar(&loglevel, "loglevel", "info", "set loglevel, can be one of ('info', 'warning' or 'debug')")
-	flag.StringVar(&thenWhat, "then", "nothing", "what to do after getting an incident? can be one of ('nothing', or 'ack')")
+	flag.StringVar(&forwarderModule, "output", "", "output module")
+	flag.StringVar(&loglevel, "loglevel", "", "set loglevel, can be one of ('info', 'warning' or 'debug')")
+	flag.StringVar(&thenWhat, "then", "", "what to do after getting an incident? can be one of ('nothing', or 'ack')")
 	flag.StringVar(&sinceWhenString, "since", "", `get events newer than this time.
 		format has to be like this: 'yyyy-MM-dd HH:mm:ss'
 		if nothing provided, it will check value from '.canary.lastcheck' file,

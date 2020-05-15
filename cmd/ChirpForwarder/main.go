@@ -70,13 +70,13 @@ var (
 
 // setting vars
 func init() {
-	popultaeVarsFromEnv()   // first: get from environment variables
-	populateVarsFromFlags() // then: override with flags (if set)
+	populateVarsFromFlags() // first: set vars with flags
+	popultaeVarsFromEnv()   // then: populate remaining vars from environment
 }
 
 func main() {
 	log.Info("starting canary ChirpForwarder")
-	// Profiler Start
+	// Mem/Heap Profiler Start
 	agent := stackimpact.Start(stackimpact.Options{
 		AgentKey: "aff482334b4e5bf0d9f4fea81dda16fa8068eb32",
 		AppName:  "ChirpForwarder",
@@ -87,14 +87,6 @@ func main() {
 
 	// parse arguments
 	flag.Parse()
-	// Check Environment
-	// env := os.Environ()
-
-	// create chans
-	var incidentsChan = make(chan canarytools.Incident)
-	var filteredIncidentsChan = make(chan canarytools.Incident)
-	var outChan = make(chan []byte)
-	var incidentAckerChan = make(chan []byte)
 
 	// create logger & setting log level
 	l := log.New()
@@ -108,8 +100,32 @@ func main() {
 	case "trace":
 		l.SetLevel(log.TraceLevel)
 	default:
-		l.Fatal("unsupported log level (should be 'info', 'warning', 'debug' or 'trace')")
+		l.Warn("unsupported log level, or none specified; will set to 'info', ")
+		l.SetLevel(log.InfoLevel)
 	}
+	// setting default values for those that doesn't exist
+	// had to do it here instead of flag package to support envrionment vars
+	switch thenWhat {
+	case "nothing":
+	case "ack":
+	default:
+		l.Warn("'then' is not valid, or not specified; will set to 'nothing'")
+		thenWhat = "nothing"
+	}
+
+	switch whichIncidents {
+	case "all":
+	case "unacknowledged":
+	default:
+		l.Warn("'which' is not valid, or not specified; will set to 'unacknowledged'")
+		whichIncidents = "unacknowledged"
+	}
+	// start of main app logic
+	// create chans
+	var incidentsChan = make(chan canarytools.Incident)
+	var filteredIncidentsChan = make(chan canarytools.Incident)
+	var outChan = make(chan []byte)
+	var incidentAckerChan = make(chan []byte)
 
 	// few sanity checks
 	// Input modules look good?
