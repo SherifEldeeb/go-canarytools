@@ -127,7 +127,7 @@ func populateVarsFromFlags() {
 		format has to be like this: 'yyyy-MM-dd HH:mm:ss'
 		if nothing provided, it will check value from '.canary.lastcheck' file,
 		if .canary.lastcheck file does not exist, it will default to events from last 7 days`)
-	flag.StringVar(&whichIncidents, "which", "unacknowledged", "which incidents to fetch? can be one of ('all', or 'unacknowledged')")
+	flag.StringVar(&whichIncidents, "which", "", "which incidents to fetch? can be one of ('all', or 'unacknowledged')")
 
 	// SSL/TLS Client configs
 	// used by TCP & Elastic output
