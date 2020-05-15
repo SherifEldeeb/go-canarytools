@@ -251,9 +251,7 @@ func (c Client) GetAllIncidents(since time.Time) (incidents []Incident, err erro
 
 // Feed fetches incidents and feeds them to chan
 func (c *Client) Feed(incidnetsChan chan<- Incident) {
-	ticker := time.NewTicker(time.Duration(c.fetchInterval) * time.Second)
-
-	for range ticker.C {
+	for {
 		// get all unacked incidents
 		c.l.WithFields(log.Fields{
 			"lastCheck":      c.lastCheck,
@@ -273,7 +271,8 @@ func (c *Client) Feed(incidnetsChan chan<- Incident) {
 			}).Fatal("unknown whichIncident")
 		}
 		if err != nil {
-			log.Error(err) // TODO: fail gracefully
+			c.l.Error(err) // TODO: fail gracefully
+			time.Sleep(time.Duration(c.fetchInterval) * time.Second)
 			continue
 		}
 		c.lastCheck = time.Now().UTC()
@@ -301,6 +300,8 @@ func (c *Client) Feed(incidnetsChan chan<- Incident) {
 			}).Fatal("error writing lastcheck register file")
 		}
 
+		// sleep
+		time.Sleep(time.Duration(c.fetchInterval) * time.Second)
 	}
 }
 

@@ -88,38 +88,12 @@ func main() {
 	// parse arguments
 	flag.Parse()
 
-	// create logger & setting log level
+	// create logger, this will be used throughout!
 	l := log.New()
-	switch loglevel {
-	case "info":
-		l.SetLevel(log.InfoLevel)
-	case "warning":
-		l.SetLevel(log.WarnLevel)
-	case "debug":
-		l.SetLevel(log.DebugLevel)
-	case "trace":
-		l.SetLevel(log.TraceLevel)
-	default:
-		l.Warn("unsupported log level, or none specified; will set to 'info', ")
-		l.SetLevel(log.InfoLevel)
-	}
-	// setting default values for those that doesn't exist
-	// had to do it here instead of flag package to support envrionment vars
-	switch thenWhat {
-	case "nothing":
-	case "ack":
-	default:
-		l.Warn("'then' is not valid, or not specified; will set to 'nothing'")
-		thenWhat = "nothing"
-	}
 
-	switch whichIncidents {
-	case "all":
-	case "unacknowledged":
-	default:
-		l.Warn("'which' is not valid, or not specified; will set to 'unacknowledged'")
-		whichIncidents = "unacknowledged"
-	}
+	// setting default vars for those that are not set
+	setDefaultVars(l)
+
 	// start of main app logic
 	// create chans
 	var incidentsChan = make(chan canarytools.Incident)
@@ -234,7 +208,7 @@ func main() {
 		if err != nil {
 			l.WithFields(log.Fields{
 				"err": err,
-			}).Fatal("error during creating File Out client")
+			}).Fatal("error during creating Elastic Out client")
 		}
 		forwarder = ef
 	default:

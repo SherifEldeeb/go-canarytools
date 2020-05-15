@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"io/ioutil"
 	"strconv"
 	"time"
@@ -27,22 +27,7 @@ type ElasticForwarder struct {
 // it verifies configurations and tries to ping the cluster
 func NewElasticForwarder(cfg elasticsearch.Config, index string, l *log.Logger) (elasticforwarder *ElasticForwarder, err error) {
 	elasticforwarder = &ElasticForwarder{}
-	// cfg := elasticsearch.Config{
-	// 	Addresses: []string{}, // A list of Elasticsearch nodes to use.
-	// 	Username:  "string",   // Username for HTTP Basic Authentication.
-	// 	Password:  "string",   // Password for HTTP Basic Authentication.
-	// 	// elastic cloud specific
-	// 	CloudID: "string", // Endpoint for the Elastic Service (https://elastic.co/cloud).
-	// 	APIKey:  "string", // Base64-encoded token for authorization; if set, overrides username and password.
-	// 	// Transport Specific
-	// 	Transport: &http.Transport{
-	// 		MaxIdleConnsPerHost:   10,
-	// 		ResponseHeaderTimeout: time.Second,
-	// 		TLSClientConfig: &tls.Config{
-	// 			InsecureSkipVerify: true,
-	// 		},
-	// 	},
-	// }
+
 	elasticforwarder.index = index
 	elasticforwarder.l = l
 	elasticforwarder.client, err = elasticsearch.NewClient(cfg)
@@ -60,9 +45,9 @@ func NewElasticForwarder(cfg elasticsearch.Config, index string, l *log.Logger) 
 			"source": "NewElasticForwarder",
 			"stage":  "forward",
 			"err":    err,
-			"info":   fmt.Sprintf("%s", p),
+			"status": p.Status(),
 		}).Error("NewElasticForwarder error getting cluster info")
-		return
+		return nil, errors.New(p.String())
 	}
 	defer p.Body.Close() // freakin' leak!
 

@@ -4,6 +4,8 @@ import (
 	"flag"
 	"os"
 	"strconv"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func popultaeVarsFromEnv() {
@@ -139,25 +141,81 @@ func populateVarsFromFlags() {
 	// Console API input module
 	flag.StringVar(&imConsoleAPIKey, "apikey", "", "API Key")
 	flag.StringVar(&imConsoleAPIDomain, "domain", "", "canarytools domain")
-	flag.IntVar(&imConsoleAPIFetchInterval, "interval", 5, "alert fetch interval 'in seconds'")
+	flag.IntVar(&imConsoleAPIFetchInterval, "interval", 0, "alert fetch interval 'in seconds'")
 
 	// OUTPUT MODULES
 	// TCP/UDP output module
-	flag.IntVar(&omTCPUDPPort, "port", 4455, "[OUT|TCP] TCP/UDP port")
-	flag.StringVar(&omTCPUDPHost, "host", "127.0.0.1", "[OUT|TCP] host")
+	flag.IntVar(&omTCPUDPPort, "port", 0, "[OUT|TCP] TCP/UDP port")
+	flag.StringVar(&omTCPUDPHost, "host", "", "[OUT|TCP] host")
 
 	// File forward module
-	flag.IntVar(&omFileMaxSize, "maxsize", 8, "[OUT|FILE] file max size in megabytes")
-	flag.IntVar(&omFileMaxBackups, "maxbackups", 14, "[OUT|FILE] file max number of files to keep")
-	flag.IntVar(&omFileMaxAge, "maxage", 120, "[OUT|FILE] file max age in days 'older than this will be deleted'")
+	flag.IntVar(&omFileMaxSize, "maxsize", 0, "[OUT|FILE] file max size in megabytes")
+	flag.IntVar(&omFileMaxBackups, "maxbackups", 0, "[OUT|FILE] file max number of files to keep")
+	flag.IntVar(&omFileMaxAge, "maxage", 0, "[OUT|FILE] file max age in days 'older than this will be deleted'")
 	flag.BoolVar(&omFileCompress, "compress", false, "[OUT|FILE] file compress log files?")
-	flag.StringVar(&omFileName, "filename", "canaryChirps.json", "[OUT|FILE] file name")
+	flag.StringVar(&omFileName, "filename", "", "[OUT|FILE] file name")
 
 	// elasticsearch forward module
-	flag.StringVar(&omElasticHost, "eshost", "http://127.0.0.1:9200", "[OUT|ELASTIC] elasticsearch host")
-	flag.StringVar(&omElasticUser, "esuser", "elastic", "[OUT|ELASTIC] elasticsearch user 'basic auth'")
-	flag.StringVar(&omElasticPass, "espass", "elastic", "[OUT|ELASTIC] elasticsearch password 'basic auth'")
+	flag.StringVar(&omElasticHost, "eshost", "", "[OUT|ELASTIC] elasticsearch host")
+	flag.StringVar(&omElasticUser, "esuser", "", "[OUT|ELASTIC] elasticsearch user 'basic auth'")
+	flag.StringVar(&omElasticPass, "espass", "", "[OUT|ELASTIC] elasticsearch password 'basic auth'")
 	flag.StringVar(&omElasticCloudAPIKey, "escloudapikey", "", "[OUT|ELASTIC] elasticsearch Base64-encoded token for authorization; if set, overrides username and password")
 	flag.StringVar(&omElasticCloudID, "escloudid", "", "[OUT|ELASTIC] endpoint for the Elastic Cloud Service 'https://elastic.co/cloud'")
 	flag.StringVar(&omElasticIndex, "esindex", "canarychirps", "[OUT|ELASTIC] elasticsearch index")
+}
+
+func setDefaultVars(l *log.Logger) {
+	switch loglevel {
+	case "info":
+		l.SetLevel(log.InfoLevel)
+	case "warning":
+		l.SetLevel(log.WarnLevel)
+	case "debug":
+		l.SetLevel(log.DebugLevel)
+	case "trace":
+		l.SetLevel(log.TraceLevel)
+	default:
+		l.Warn("unsupported log level, or none specified; will set to 'info', ")
+		l.SetLevel(log.InfoLevel)
+	}
+	// setting default values for those that doesn't exist
+	// had to do it here instead of flag package to support envrionment vars
+	switch thenWhat {
+	case "nothing":
+	case "ack":
+	default:
+		l.Warn("'then' is not valid, or not specified; will set to 'nothing'")
+		thenWhat = "nothing"
+	}
+
+	switch whichIncidents {
+	case "all":
+	case "unacknowledged":
+	default:
+		l.Warn("'which' is not valid, or not specified; will set to 'unacknowledged'")
+		whichIncidents = "unacknowledged"
+	}
+
+	if imConsoleAPIFetchInterval == 0 {
+		l.Warn("'interval' is not valid, or not specified; will set to '60 seconds'")
+		imConsoleAPIFetchInterval = 60
+	}
+
+	// File forward module
+	if omFileMaxSize == 0 {
+		l.Warn("'maxsize' is not valid, or not specified; will set to '8 Megabytes'")
+		omFileMaxSize = 8
+	}
+	if omFileMaxBackups == 0 {
+		l.Warn("'maxbackups' is not valid, or not specified; will set to '14 files'")
+		omFileMaxBackups = 14
+	}
+	if omFileMaxAge == 0 {
+		l.Warn("'maxage' is not valid, or not specified; will set to '120 days'")
+		omFileMaxAge = 120
+	}
+	if omFileName == "" {
+		l.Warn("'filename' is not valid, or not specified; will set to 'canaryChirps.json'")
+		omFileName = "canaryChirps.json"
+	}
 }
