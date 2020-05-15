@@ -16,97 +16,48 @@ import (
 
 var (
 	// General flags
-	feederModule    string
-	forwarderModule string
-	loglevel        string
-	thenWhat        string
-	sinceWhenString string
-	whichIncidents  string
+	feederModule    string // CANARY_FEEDER
+	forwarderModule string // CANARY_OUTPUT
+	loglevel        string // CANARY_LOGLEVEL
+	thenWhat        string // CANARY_THEN
+	sinceWhenString string // CANARY_SINCE
+	whichIncidents  string // CANARY_WHICH
 
 	// SSL/TLS Client configs
 	// used by TCP & Elastic output
-	sslUseSSL       bool
-	sslSkipInsecure bool
-	sslCA           string
-	sslKey          string
-	sslCert         string
+	sslUseSSL       bool   // CANARY_SSL
+	sslSkipInsecure bool   // CANARY_INSECURE
+	sslCA           string // CANARY_SSLCLIENTCA
+	sslKey          string // CANARY_SSLCLIENTKEY
+	sslCert         string // CANARY_SSLCLIENTCERT
 
 	// INPUT MODULES
 	// Console API input module
-	imConsoleAPIKey           string
-	imConsoleAPIDomain        string
-	imConsoleAPIFetchInterval int
+	imConsoleAPIKey           string // CANARY_APIKEY
+	imConsoleAPIDomain        string // CANARY_DOMAIN
+	imConsoleAPIFetchInterval int    // CANARY_INTERVAL
 
 	// OUTPUT MODULES
 	// TCP/UDP output module
-	omTCPUDPPort int
-	omTCPUDPHost string
+	omTCPUDPPort int    // CANARY_PORT
+	omTCPUDPHost string // CANARY_HOST
 
 	// File forward module
-	omFileMaxSize    int
-	omFileMaxBackups int
-	omFileMaxAge     int
-	omFileCompress   bool
-	omFileName       string
+	omFileMaxSize    int    // CANARY_MAXSIZE
+	omFileMaxBackups int    // CANARY_MAXBACKUPS
+	omFileMaxAge     int    // CANARY_MAXAGE
+	omFileCompress   bool   // CANARY_COMPRESS
+	omFileName       string // CANARY_FILENAME
 
 	// elasticsearch forward module
-	omElasticHost        string
-	omElasticUser        string
-	omElasticPass        string
-	omElasticCloudAPIKey string
-	omElasticCloudID     string
-	omElasticIndex       string
+	omElasticHost        string // CANARY_ESHOST
+	omElasticUser        string // CANARY_ESUSER
+	omElasticPass        string // CANARY_ESPASS
+	omElasticCloudAPIKey string // CANARY_ESCLOUDAPIKEY
+	omElasticCloudID     string // CANARY_ESCLOUDID
+	omElasticIndex       string // CANARY_ESINDEX
+
 )
-
-// setting vars
-func init() {
-	// General flags
-	flag.StringVar(&feederModule, "feeder", "consoleapi", "input module")
-	flag.StringVar(&forwarderModule, "output", "tcp", "output module")
-	flag.StringVar(&loglevel, "loglevel", "info", "set loglevel, can be one of ('info', 'warning' or 'debug')")
-	flag.StringVar(&thenWhat, "then", "nothing", "what to do after getting an incident? can be one of ('nothing', or 'ack')")
-	flag.StringVar(&sinceWhenString, "since", "", `get events newer than this time.
-	format has to be like this: 'yyyy-MM-dd HH:mm:ss'
-	if nothing provided, it will check value from '.canary.lastcheck' file,
-	if .canary.lastcheck file does not exist, it will default to events from last 7 days`)
-	flag.StringVar(&whichIncidents, "which", "unacknowledged", "which incidents to fetch? can be one of ('all', or 'unacknowledged')")
-
-	// SSL/TLS Client configs
-	// used by TCP & Elastic output
-	flag.BoolVar(&sslUseSSL, "ssl", false, "[SSL/TLS CLIENT] are we using SSL/TLS? setting this to true enables encrypted clinet configs")
-	flag.BoolVar(&sslSkipInsecure, "insecure", false, "[SSL/TLS CLIENT] ignore cert errors")
-	flag.StringVar(&sslCA, "sslclientca", "", "[SSL/TLS CLIENT] path to client rusted CA certificate file")
-	flag.StringVar(&sslKey, "sslclientkey", "", "[SSL/TLS CLIENT] path to client SSL/TLS Key  file")
-	flag.StringVar(&sslCert, "sslclientcert", "", "[SSL/TLS CLIENT] path to client SSL/TLS cert  file")
-
-	// INPUT MODULES
-	// Console API input module
-	flag.StringVar(&imConsoleAPIKey, "apikey", "", "API Key")
-	flag.StringVar(&imConsoleAPIDomain, "domain", "", "canarytools domain")
-	flag.IntVar(&imConsoleAPIFetchInterval, "interval", 5, "alert fetch interval 'in seconds'")
-	// TODO: webhook
-	// TODO: syslog
-
-	// OUTPUT MODULES
-	// TCP/UDP output module
-	flag.IntVar(&omTCPUDPPort, "port", 4455, "[OUT|TCP] TCP/UDP port")
-	flag.StringVar(&omTCPUDPHost, "host", "127.0.0.1", "[OUT|TCP] host")
-
-	// File forward module
-	flag.IntVar(&omFileMaxSize, "maxsize", 8, "[OUT|FILE] file max size in megabytes")
-	flag.IntVar(&omFileMaxBackups, "maxbackups", 14, "[OUT|FILE] file max number of files to keep")
-	flag.IntVar(&omFileMaxAge, "maxage", 120, "[OUT|FILE] file max age in days 'older than this will be deleted'")
-	flag.BoolVar(&omFileCompress, "compress", false, "[OUT|FILE] file compress log files?")
-	flag.StringVar(&omFileName, "filename", "canaryChirps.json", "[OUT|FILE] file name")
-
-	// elasticsearch forward module
-	flag.StringVar(&omElasticHost, "eshost", "http://127.0.0.1:9200", "[OUT|ELASTIC] elasticsearch host")
-	flag.StringVar(&omElasticUser, "esuser", "elastic", "[OUT|ELASTIC] elasticsearch user 'basic auth'")
-	flag.StringVar(&omElasticPass, "espass", "elastic", "[OUT|ELASTIC] elasticsearch password 'basic auth'")
-	flag.StringVar(&omElasticCloudAPIKey, "escloudapikey", "", "[OUT|ELASTIC] elasticsearch Base64-encoded token for authorization; if set, overrides username and password")
-	flag.StringVar(&omElasticCloudID, "escloudid", "", "[OUT|ELASTIC] endpoint for the Elastic Cloud Service 'https://elastic.co/cloud'")
-	flag.StringVar(&omElasticIndex, "esindex", "canarychirps", "[OUT|ELASTIC] elasticsearch index")
-}
 
 // interface placeholders
 var (
@@ -117,17 +68,11 @@ var (
 	forwarder     canarytools.Forwarder
 )
 
-// implemented modules
-var (
-	validFeederModules = map[string]bool{
-		"consoleapi": true,
-	}
-	validForwarderModules = map[string]bool{
-		"tcp":     true,
-		"file":    true,
-		"elastic": true,
-	}
-)
+// setting vars
+func init() {
+	popultaeVarsFromEnv()   // first: get from environment variables
+	populateVarsFromFlags() // then: override with flags (if set)
+}
 
 func main() {
 	log.Info("starting canary ChirpForwarder")
@@ -167,16 +112,6 @@ func main() {
 	}
 
 	// few sanity checks
-	// valid input module?
-	_, ok := validFeederModules[feederModule]
-	if !ok {
-		l.Fatal("invalid input module specifed")
-	}
-	_, ok = validForwarderModules[forwarderModule]
-	if !ok {
-		l.Fatal("invalid output module specifed")
-	}
-
 	// Input modules look good?
 	switch feederModule {
 	case "consoleapi":
@@ -204,6 +139,8 @@ func main() {
 		l.Debug("ping successful! we're good to go")
 		feeder = c
 		incidentAcker = c
+	default:
+		l.WithField("feeder", feederModule).Fatal("unsupported feeder module specified")
 	}
 
 	// Prepping SSL/TLS configs
@@ -285,10 +222,11 @@ func main() {
 		}
 		forwarder = ef
 	default:
-		l.Fatal("unsupported output module")
+		l.WithField("outputModule", forwarderModule).Fatal("unsupported output module")
 	}
 
 	// filter
+	// currently, we haven't build anything here yet
 	filter, err := canarytools.NewFilterNone(l)
 	if err != nil {
 		l.WithFields(log.Fields{
@@ -296,7 +234,8 @@ func main() {
 		}).Fatal("error creating None filter")
 	}
 
-	//mapper
+	// mapper
+	// only JSON mapper is implemented
 	mapper, err := canarytools.NewMapperJSON(false, l)
 	if err != nil {
 		l.WithFields(log.Fields{
