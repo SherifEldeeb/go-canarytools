@@ -6,6 +6,7 @@ import (
 	"flag"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/SherifEldeeb/canarytools"
@@ -57,6 +58,9 @@ var (
 	omElasticCloudID     string // CANARY_ESCLOUDID
 	omElasticIndex       string // CANARY_ESINDEX
 
+	// kafka forward module
+	omKafkaBrokers string // CANARY_KAFKABROKERS
+	omKafkaTopic   string // CANARY_KAFKATOPIC
 )
 
 // interface placeholders
@@ -211,6 +215,19 @@ func main() {
 			}).Fatal("error during creating Elastic Out client")
 		}
 		forwarder = ef
+	case "kafka":
+		// bulding new kafka out
+		if omKafkaTopic == "" || omKafkaBrokers == "" {
+			l.Fatal("missing kafka brokers or topic")
+		}
+		brokers := strings.Split(omKafkaBrokers, ";")
+		var kf = &canarytools.KafkaForwarder{}
+		if sslUseSSL {
+			kf, _ = canarytools.NewKafkaForwarder(brokers, omKafkaTopic, tlsConfig, l)
+		} else {
+			kf, _ = canarytools.NewKafkaForwarder(brokers, omKafkaTopic, nil, l)
+		}
+		forwarder = kf
 	default:
 		l.WithField("outputModule", forwarderModule).Fatal("unsupported output module")
 	}

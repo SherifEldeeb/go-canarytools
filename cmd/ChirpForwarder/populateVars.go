@@ -115,12 +115,20 @@ func popultaeVarsFromEnv() {
 	if omElasticIndex == "" {
 		omElasticIndex, _ = os.LookupEnv("CANARY_ESINDEX")
 	}
+
+	// kafka forward module
+	if omKafkaBrokers == "" {
+		omKafkaBrokers, _ = os.LookupEnv("CANARY_KAFKABROKERS")
+	}
+	if omKafkaTopic == "" {
+		omKafkaTopic, _ = os.LookupEnv("CANARY_KAFKATOPIC")
+	}
 }
 
 func populateVarsFromFlags() {
 	// General flags
 	flag.StringVar(&feederModule, "feeder", "consoleapi", "input module")
-	flag.StringVar(&forwarderModule, "output", "", "output module")
+	flag.StringVar(&forwarderModule, "output", "", "output module ('tcp', 'file', 'elastic' or 'kafka')")
 	flag.StringVar(&loglevel, "loglevel", "", "set loglevel, can be one of ('info', 'warning' or 'debug')")
 	flag.StringVar(&thenWhat, "then", "", "what to do after getting an incident? can be one of ('nothing', or 'ack')")
 	flag.StringVar(&sinceWhenString, "since", "", `get events newer than this time.
@@ -162,6 +170,11 @@ func populateVarsFromFlags() {
 	flag.StringVar(&omElasticCloudAPIKey, "escloudapikey", "", "[OUT|ELASTIC] elasticsearch Base64-encoded token for authorization; if set, overrides username and password")
 	flag.StringVar(&omElasticCloudID, "escloudid", "", "[OUT|ELASTIC] endpoint for the Elastic Cloud Service 'https://elastic.co/cloud'")
 	flag.StringVar(&omElasticIndex, "esindex", "canarychirps", "[OUT|ELASTIC] elasticsearch index")
+
+	// kafka forward module
+	flag.StringVar(&omKafkaBrokers, "kafkabrokers", "", `[OUT|KAFKA] kafka brokers "broker:port"
+		for multiple brokers, separate using semicolon "broker1:9092;broker2:9092"`)
+	flag.StringVar(&omKafkaTopic, "kafkatopic", "", "[OUT|KAFKA] elasticsearch user 'basic auth'")
 }
 
 func setDefaultVars(l *log.Logger) {
