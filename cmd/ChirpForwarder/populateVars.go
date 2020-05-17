@@ -63,6 +63,9 @@ func popultaeVarsFromEnv() {
 	if imConsoleAPIDomain == "" {
 		imConsoleAPIDomain, _ = os.LookupEnv("CANARY_DOMAIN")
 	}
+	if imConsoleTokenFile == "" {
+		imConsoleTokenFile, _ = os.LookupEnv("CANARY_TOKENFILE")
+	}
 	if imConsoleAPIFetchInterval == 0 {
 		imConsoleAPIFetchIntervalInt, _ := os.LookupEnv("CANARY_INTERVAL")
 		imConsoleAPIFetchInterval, _ = strconv.Atoi(imConsoleAPIFetchIntervalInt)
@@ -153,6 +156,7 @@ func populateVarsFromFlags() {
 	// Console API input module
 	flag.StringVar(&imConsoleAPIKey, "apikey", "", "API Key")
 	flag.StringVar(&imConsoleAPIDomain, "domain", "", "canarytools domain")
+	flag.StringVar(&imConsoleTokenFile, "tokenfile", "", "the token file 'canarytools.config' which contains api token and the domain")
 	flag.IntVar(&imConsoleAPIFetchInterval, "interval", 0, "alert fetch interval 'in seconds'")
 
 	// OUTPUT MODULES

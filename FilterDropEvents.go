@@ -6,13 +6,14 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// FilterDropEvents is a filter that drops "events" from incidents.
-// this will reduce incident size keeping only basic information about the
-// incident.
+// FilterDropEvents is a filter that drops "events" from incidents' descritpion
+// object, this will reduce incident size keeping only basic information about
+// the incident.
 type FilterDropEvents struct {
 	l *log.Logger
 }
 
+// NewFilterDropEvents creates a new FilterDropEvents
 func NewFilterDropEvents(l *log.Logger) (fde *FilterDropEvents, err error) {
 	fde = &FilterDropEvents{}
 	fde.l = l

@@ -6,6 +6,9 @@ import (
 	"flag"
 	"io/ioutil"
 	"net/http"
+	"os"
+	"os/user"
+	"path"
 	"strings"
 	"time"
 
@@ -37,6 +40,7 @@ var (
 	// Console API input module
 	imConsoleAPIKey           string // CANARY_APIKEY
 	imConsoleAPIDomain        string // CANARY_DOMAIN
+	imConsoleTokenFile        string // CANARY_TOKENFILE
 	imConsoleAPIFetchInterval int    // CANARY_INTERVAL
 
 	// OUTPUT MODULES
@@ -110,6 +114,43 @@ func main() {
 	// Input modules look good?
 	switch feederModule {
 	case "consoleapi":
+		// did you specify both token file && manually using apikey+domain?
+		if imConsoleTokenFile != "" && (imConsoleAPIDomain != "" || imConsoleAPIKey != "") {
+			l.Fatal("look, you either use 'tokenfile' or 'apikey+domain', not both")
+		}
+		// so, what if token file is not specfied, but neither apikey+domain?
+		// we'll look for the "canarytools.config" file in user's home directory
+		if imConsoleTokenFile == "" && imConsoleAPIDomain == "" && imConsoleAPIKey == "" {
+			l.Warn("none of 'tokenfile', 'apikey' & 'domain' has been provided! will look for 'canarytools.config' file in user's home directory")
+			u, err := user.Current()
+			if err != nil {
+				l.WithFields(log.Fields{
+					"err": err,
+				}).Fatal("error getting current user")
+			}
+			imConsoleTokenFile = path.Join(u.HomeDir, "canarytools.config")
+			l.WithField("path", imConsoleTokenFile).Warn("automatically looking for canarytools.config")
+			if _, err := os.Stat(imConsoleTokenFile); os.IsNotExist(err) {
+				l.Fatal("couldn't get apikey+domain! provide using environment variables, command line flags, or path to token file")
+			}
+		}
+		// tokenfile specified? get values from there
+		if imConsoleTokenFile != "" {
+			imConsoleAPIKey, imConsoleAPIDomain, err = canarytools.LoadTokenFile(imConsoleTokenFile)
+			if err != nil || imConsoleAPIDomain == "" || imConsoleAPIKey == "" {
+				l.WithFields(log.Fields{
+					"err":    err,
+					"api":    imConsoleAPIKey,
+					"domain": imConsoleAPIDomain,
+				}).Fatal("error parsing token file")
+			}
+			l.WithFields(log.Fields{
+				"path":   imConsoleTokenFile,
+				"api":    imConsoleAPIKey,
+				"domain": imConsoleAPIDomain,
+			}).Info("successfully parsed token file, using values from there")
+		}
+		// few checks
 		if len(imConsoleAPIKey) != 32 {
 			l.Fatal("invalid API Key (length != 32)")
 		}
