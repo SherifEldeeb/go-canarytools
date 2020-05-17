@@ -19,3 +19,4 @@ cmd/*.json
 cmd/ChirpForwarder/.canary.lastcheck
 canarytools.config
 cmd/ChirpForwarder/certs/
+cmd/ChirpForwarder/canaryChirps.json

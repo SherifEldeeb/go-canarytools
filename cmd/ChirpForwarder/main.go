@@ -23,6 +23,7 @@ var (
 	thenWhat        string // CANARY_THEN
 	sinceWhenString string // CANARY_SINCE
 	whichIncidents  string // CANARY_WHICH
+	incidentFilter  string // CANARY_FILTER
 
 	// SSL/TLS Client configs
 	// used by TCP & Elastic output
@@ -88,7 +89,7 @@ func main() {
 	span := agent.Profile()
 	defer span.Stop()
 	// Profiler end
-
+	var err error
 	// parse arguments
 	flag.Parse()
 
@@ -135,6 +136,28 @@ func main() {
 		incidentAcker = c
 	default:
 		l.WithField("feeder", feederModule).Fatal("unsupported feeder module specified")
+	}
+
+	// filter
+	switch incidentFilter {
+	case "none":
+		filter, err = canarytools.NewFilterNone(l)
+		if err != nil {
+			l.WithFields(log.Fields{
+				"err": err,
+			}).Fatal("error creating None filter")
+		}
+	case "dropevents":
+		filter, err = canarytools.NewFilterDropEvents(l)
+		if err != nil {
+			l.WithFields(log.Fields{
+				"err": err,
+			}).Fatal("error creating DropEvents filter")
+		}
+	default:
+		l.WithFields(log.Fields{
+			"filter": incidentFilter,
+		}).Fatal("unsupported filter")
 	}
 
 	// Prepping SSL/TLS configs
@@ -230,15 +253,6 @@ func main() {
 		forwarder = kf
 	default:
 		l.WithField("outputModule", forwarderModule).Fatal("unsupported output module")
-	}
-
-	// filter
-	// currently, we haven't build anything here yet
-	filter, err := canarytools.NewFilterNone(l)
-	if err != nil {
-		l.WithFields(log.Fields{
-			"err": err,
-		}).Fatal("error creating None filter")
 	}
 
 	// mapper

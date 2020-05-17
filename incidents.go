@@ -14,7 +14,8 @@ type GetIncidentsResponse struct {
 
 // Incident is an incident, returned from the incidnets API
 type Incident struct {
-	Description map[string]interface{} `json:"description,omitempty"` // TODO: this varies greatly!
+	//	Description []Description `json:"description,omitempty"` // TODO: this varies greatly!
+	Description map[string]interface{} `json:"description,omitempty"`
 	HashID      string                 `json:"hash_id,omitempty"`
 	ID          string                 `json:"id,omitempty"`
 	Summary     string                 `json:"summary,omitempty"`
@@ -26,22 +27,26 @@ type Incident struct {
 
 // Description contains details about incidents
 type Description struct {
-	Acknowledged bool    `json:"acknowledged,omitempty"`
-	Created      string  `json:"created,omitempty"`
-	CreatedStd   string  `json:"created_std,omitempty"`
-	Description  string  `json:"description,omitempty"`
-	DstHost      string  `json:"dst_host,omitempty"`
-	DstPort      int     `json:"dst_port,omitempty"`
-	Events       []Event `json:"events,omitempty"`
-	EventsCount  int     `json:"events_count,omitempty"`
-	LocalTime    string  `json:"local_time,omitempty"`
-	Logtype      string  `json:"logtype,omitempty"`
-	Memo         string  `json:"memo,omitempty"`
-	Name         string  `json:"name,omitempty"`
-	NodeID       string  `json:"node_id,omitempty"`
-	Notified     bool    `json:"notified,omitempty"`
-	SrcHost      string  `json:"src_host,omitempty"`
-	SrcPort      int     `json:"src_port,omitempty"`
+	Acknowledged   string                   `json:"acknowledged,omitempty"`
+	Created        string                   `json:"created,omitempty"`
+	CreatedStd     string                   `json:"created_std,omitempty"`
+	Description    string                   `json:"description,omitempty"`
+	DstHost        string                   `json:"dst_host,omitempty"`
+	DstPort        string                   `json:"dst_port,omitempty"`
+	Events         []map[string]interface{} `json:"events,omitempty"`
+	EventsCount    string                   `json:"events_count,omitempty"`
+	IPAddress      string                   `json:"ip_address,omitempty"`
+	Ippers         string                   `json:"ippers,omitempty"`
+	LocalTime      string                   `json:"local_time,omitempty"`
+	Logtype        string                   `json:"logtype,omitempty"`
+	MACAddress     string                   `json:"mac_address,omitempty"`
+	Memo           string                   `json:"memo,omitempty"`
+	Name           string                   `json:"name,omitempty"`
+	NodeID         string                   `json:"node_id,omitempty"`
+	Notified       string                   `json:"notified,omitempty"`
+	SrcHost        string                   `json:"src_host,omitempty"`
+	SrcHostReverse string                   `json:"src_host_reverse,omitempty"`
+	SrcPort        string                   `json:"src_port,omitempty"`
 }
 
 // Event is part of Incidents (typically in an array),

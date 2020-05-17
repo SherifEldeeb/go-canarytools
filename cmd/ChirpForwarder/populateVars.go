@@ -31,6 +31,9 @@ func popultaeVarsFromEnv() {
 	if whichIncidents == "" {
 		whichIncidents, _ = os.LookupEnv("CANARY_WHICH")
 	}
+	if incidentFilter == "" {
+		incidentFilter, _ = os.LookupEnv("CANARY_FILTER")
+	}
 
 	// SSL/TLS Client configs
 	// used by TCP & Elastic output
@@ -136,6 +139,7 @@ func populateVarsFromFlags() {
 		if nothing provided, it will check value from '.canary.lastcheck' file,
 		if .canary.lastcheck file does not exist, it will default to events from last 7 days`)
 	flag.StringVar(&whichIncidents, "which", "", "which incidents to fetch? can be one of ('all', or 'unacknowledged')")
+	flag.StringVar(&incidentFilter, "filter", "", "filter to apply to incident ('none', or 'dropevents')")
 
 	// SSL/TLS Client configs
 	// used by TCP & Elastic output
@@ -207,6 +211,14 @@ func setDefaultVars(l *log.Logger) {
 	default:
 		l.Warn("'which' is not valid, or not specified; will set to 'unacknowledged'")
 		whichIncidents = "unacknowledged"
+	}
+
+	switch incidentFilter {
+	case "none":
+	case "dropevents":
+	default:
+		l.Warn("'filter' is not valid, or not specified; will set to 'none'")
+		incidentFilter = "none"
 	}
 
 	if imConsoleAPIFetchInterval == 0 {
