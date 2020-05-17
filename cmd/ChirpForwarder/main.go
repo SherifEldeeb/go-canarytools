@@ -80,7 +80,9 @@ var (
 // setting vars
 func init() {
 	populateVarsFromFlags() // first: set vars with flags
-	popultaeVarsFromEnv()   // then: populate remaining vars from environment
+	popultaeVarsFromEnv()   // then:  populate remaining vars from environment
+	// explicit command line flags overrides environment variables; values from
+	// environment variables are only set if not already set by flags
 }
 
 func main() {
