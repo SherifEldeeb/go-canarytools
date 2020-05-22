@@ -1,5 +1,7 @@
 package canarytools
 
+import "crypto/tls"
+
 // ChirpForwarderConfig contains configs for the forwarder
 type ChirpForwarderConfig struct {
 	// General flags
@@ -25,6 +27,9 @@ type ChirpForwarderConfig struct {
 
 	// kafka forward module
 	KafkaOutConfig
+
+	// TLS config
+	TLSConfig *tls.Config
 }
 
 // GeneralConfig contains general configs
@@ -43,7 +48,7 @@ type GeneralConfig struct {
 type SSLConfig struct {
 	// SSL/TLS Client configs
 	// used by TCP & Elastic output
-	SSlUseSSL       bool   // CANARY_SSL
+	SSLUseSSL       bool   // CANARY_SSL
 	SSLSkipInsecure bool   // CANARY_INSECURE
 	SSLCA           string // CANARY_SSLCLIENTCA
 	SSLKey          string // CANARY_SSLCLIENTKEY
