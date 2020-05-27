@@ -54,43 +54,4 @@ func (mj MapperJSON) Map(filteredIncidnetsChan <-chan Incident, outChan chan<- [
 		outChan <- []byte(strings.TrimSpace(string(j)) + "\n")
 
 	}
-
-	// It'll work like this: JSON Encoder -> (bytes.Buffer) -> bufio.Scanner -> scanner.Scan -> scanner.Text
-	// we do this to benefit from EscapeHTML, otherwise json.Marshal would have been easier.
-	// b := make([]byte, 1024*1024*5)
-	// buf := bytes.NewBuffer(b)
-	// enc := json.NewEncoder(buf)
-	// enc.SetEscapeHTML(mj.escapeHTML)
-
-	// go func(enc *json.Encoder) {
-	// 	for v := range filteredIncidnetsChan {
-	// 		// logging
-	// 		mj.l.WithFields(log.Fields{
-	// 			"source":  "MapperJSON",
-	// 			"stage":   "map",
-	// 			"content": fmt.Sprintf("%#v", v),
-	// 		}).Trace("JSON Map")
-
-	// 		mj.l.WithFields(log.Fields{
-	// 			"source":   "MapperJSON",
-	// 			"stage":    "map",
-	// 			"incident": v.Summary,
-	// 		}).Debug("JSON Map Encoded")
-
-	// 		enc.Encode(v)
-	// 	}
-	// }(enc)
-
-	// for buf.ReadString('\n') {
-	// 	o := sc.Text()
-
-	// 	mj.l.WithFields(log.Fields{
-	// 		"source":       "MapperJSON",
-	// 		"stage":        "map",
-	// 		"JSONIncident": o,
-	// 	}).Debug("JSON Encoded Incidnet - Scanner Read")
-
-	// 	outChan <- []byte(o)
-	// }
-
 }
