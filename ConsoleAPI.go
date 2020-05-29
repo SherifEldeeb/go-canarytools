@@ -41,7 +41,11 @@ func NewClient(domain, apikey, thenWhat, sinceWhen, whichIncidents string, fetch
 	case sinceWhen != "":
 		t, err = time.Parse("2006-01-02 15:04:05", sinceWhen)
 		if err != nil {
-			return
+			c.l.WithFields(log.Fields{
+				"err":          err,
+				"providedTime": sinceWhen,
+			}).Warn("error parsing time from provided value, setting default time (-7days)!")
+			t = time.Now().AddDate(0, 0, -7).UTC()
 		}
 	// if nothing provided, we look for '.canary.lastcheck' file
 	case sinceWhen == "":
@@ -56,8 +60,9 @@ func NewClient(domain, apikey, thenWhat, sinceWhen, whichIncidents string, fetch
 			t, err = time.Parse("2006-01-02 15:04:05", s)
 			if err != nil {
 				c.l.WithFields(log.Fields{
-					"err": err,
-				}).Error("error parsing time from .canary.lastcheck, setting default time (-7days)!")
+					"err":               err,
+					".canary.lastcheck": s,
+				}).Warn("error parsing time from .canary.lastcheck, setting default time (-7days)!")
 				t = time.Now().AddDate(0, 0, -7).UTC()
 			}
 		} else { // file doesn't exist, we default to (today - 7 days).
