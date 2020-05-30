@@ -76,6 +76,7 @@ func NewClient(domain, apikey, thenWhat, sinceWhen, whichIncidents string, fetch
 			t = time.Now().AddDate(0, 0, -7).UTC()
 		}
 	}
+	l.WithField("sinceWhen", t).Info("Events 'sinceWhen' parsed or successfully set")
 	c.lastCheck = t
 	c.thenWhat = thenWhat
 	c.whichIncidents = whichIncidents
