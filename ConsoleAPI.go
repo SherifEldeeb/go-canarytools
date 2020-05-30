@@ -27,12 +27,19 @@ type Client struct {
 	fetchInterval     int
 	thenWhat          string
 	whichIncidents    string
+	lastCheckFile     string
 }
 
 // NewClient creates a new client from domain & API Key
 func NewClient(domain, apikey, thenWhat, sinceWhen, whichIncidents string, fetchInterval int, l *log.Logger) (c *Client, err error) {
 	c = &Client{}
 	c.l = l
+	// create local work folder
+	err = os.MkdirAll(".canary", 0755)
+	if err != nil {
+		return
+	}
+	c.lastCheckFile = ".canary/lastcheck"
 	// time parsing
 	var t time.Time
 	switch {
@@ -49,9 +56,9 @@ func NewClient(domain, apikey, thenWhat, sinceWhen, whichIncidents string, fetch
 		}
 	// if nothing provided, we look for '.canary.lastcheck' file
 	case sinceWhen == "":
-		if _, err = os.Stat(".canary.lastcheck"); err == nil { // file exists, and we have no issues reading it
+		if _, err = os.Stat(c.lastCheckFile); err == nil { // file exists, and we have no issues reading it
 			var b = []byte{}
-			b, err = ioutil.ReadFile(".canary.lastcheck")
+			b, err = ioutil.ReadFile(c.lastCheckFile)
 			if err != nil {
 				return
 			}
@@ -60,9 +67,9 @@ func NewClient(domain, apikey, thenWhat, sinceWhen, whichIncidents string, fetch
 			t, err = time.Parse("2006-01-02 15:04:05", s)
 			if err != nil {
 				c.l.WithFields(log.Fields{
-					"err":               err,
-					".canary.lastcheck": s,
-				}).Warn("error parsing time from .canary.lastcheck, setting default time (-7days)!")
+					"err":           err,
+					c.lastCheckFile: s,
+				}).Warn("error parsing time from lastCheckFile, setting default time (-7days)!")
 				t = time.Now().AddDate(0, 0, -7).UTC()
 			}
 		} else { // file doesn't exist, we default to (today - 7 days).
@@ -88,7 +95,7 @@ func NewClient(domain, apikey, thenWhat, sinceWhen, whichIncidents string, fetch
 		return
 	}
 	// write lastcheck register
-	c.lastCheckRegister, err = os.Create(".canary.lastcheck")
+	c.lastCheckRegister, err = os.Create(c.lastCheckFile)
 	if err != nil {
 		return
 	}
