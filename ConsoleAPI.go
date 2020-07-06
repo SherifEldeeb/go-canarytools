@@ -81,22 +81,26 @@ func (c Client) api(endpoint string, params *url.Values) (fullURL *url.URL, err 
 
 // decodeResponse decodes reponses into target interfaces
 func (c Client) decodeResponse(endpoint, verb string, params *url.Values, target interface{}) (err error) {
-	fullURL, err := c.api(endpoint, params)
+	var resp = &http.Response{}
+	var fullURL = &url.URL{}
+	fullURL, err = c.api(endpoint, nil)
 	if err != nil {
 		return
 	}
 
-	c.l.WithFields(log.Fields{
-		"url":      fullURL.String(), // TODO: remove sensitive data
-		"HTTPverb": verb,
-	}).Debug("hitting API")
-
-	var resp = &http.Response{}
 	switch verb {
 	case "GET":
+		fullURL, err = c.api(endpoint, params)
+		if err != nil {
+			return
+		}
+		c.l.WithFields(log.Fields{
+			"url":      fullURL.String(), // TODO: remove sensitive data
+			"HTTPverb": verb,
+		}).Debug("hitting API")
 		resp, err = c.httpclient.Get(fullURL.String())
 	case "POST":
-		resp, err = c.httpclient.Post(fullURL.String(), "application/x-www-form-urlencoded", nil)
+		resp, err = c.httpclient.PostForm(fullURL.String(), *params)
 	case "DELETE":
 		req, _ := http.NewRequest("DELETE", fullURL.String(), nil)
 		resp, err = c.httpclient.Do(req)
