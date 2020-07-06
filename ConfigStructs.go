@@ -2,10 +2,27 @@ package canarytools
 
 import "crypto/tls"
 
+// TokenDropperConfig contains configs for the TokenDropper
+type TokenDropperConfig struct {
+	ConsoleAPIConfig
+	GeneralTokenDropperConfig
+}
+
+// GeneralTokenDropperConfig contains general configs for TokenDropper
+type GeneralTokenDropperConfig struct {
+	// General flags
+	MinFiles        int    // min number of files per directory
+	MaxFile         int    // max number of files per directory
+	LocalTokenProxy bool   // start as a local token proxy?
+	FactoryAuth     string // Token Factory auth string
+	DropWhere       string // where to drop tokens?
+	DropWhat        string // what kind of tokens to drop
+}
+
 // ChirpForwarderConfig contains configs for the forwarder
 type ChirpForwarderConfig struct {
 	// General flags
-	GeneralConfig
+	GeneralChirpForwarderConfig
 
 	// SSL/TLS Client configs
 	// used by TCP & Elastic output
@@ -32,8 +49,8 @@ type ChirpForwarderConfig struct {
 	TLSConfig *tls.Config
 }
 
-// GeneralConfig contains general configs
-type GeneralConfig struct {
+// GeneralChirpForwarderConfig contains general configs for ChirpForwarder
+type GeneralChirpForwarderConfig struct {
 	// General flags
 	FeederModule    string // CANARY_FEEDER
 	ForwarderModule string // CANARY_OUTPUT
@@ -58,10 +75,11 @@ type SSLConfig struct {
 // ConsoleAPIConfig contains configs for Console API input module
 type ConsoleAPIConfig struct {
 	// Console API input module
-	ImConsoleAPIKey           string // CANARY_APIKEY
-	ImConsoleAPIDomain        string // CANARY_DOMAIN
-	ImConsoleTokenFile        string // CANARY_TOKENFILE
-	ImConsoleAPIFetchInterval int    // CANARY_INTERVAL
+	ImConsoleAPIKey    string // CANARY_APIKEY
+	ImConsoleAPIDomain string // CANARY_DOMAIN
+	ImConsoleTokenFile string // CANARY_TOKENFILE
+	// TODO: Move to consoleAPIFeeder
+	ImConsoleAPIFetchInterval int // CANARY_INTERVAL
 }
 
 // TCPOutConfig contains configs for the TCP output module
