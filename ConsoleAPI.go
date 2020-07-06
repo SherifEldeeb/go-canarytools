@@ -202,7 +202,7 @@ func (c *Client) AckIncidents(ackedIncident <-chan []byte) {
 		a, ok := incident.Description["acknowledged"]
 		if ok {
 			// ack, only if it hasn't been ack'd already
-			if a == "False" {
+			if a == "False" && incident.ThenWhat == "ack" {
 				err = c.AckIncident(incident.ID)
 			}
 		}

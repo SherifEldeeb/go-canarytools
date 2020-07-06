@@ -265,8 +265,8 @@ func (cf *ChirpForwarder) Run() {
 	cf.setFeeder()
 	cf.setFilter()
 	cf.setTLSConfig()
-	cf.setForwarder()
 	cf.setMapper()
+	cf.setForwarder()
 
 	// All good, let's roll...
 	go cf.feeder.Feed(cf.incidentsChan)

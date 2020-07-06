@@ -145,6 +145,7 @@ func (c *ConsoleAPIFeeder) Feed(incidnetsChan chan<- Incident) {
 			log.WithFields(log.Fields{
 				"UpdatedID": v.UpdatedID,
 			}).Debug(v.Summary)
+			v.ThenWhat = c.thenWhat
 			incidnetsChan <- v
 			// if c.thenWhat == "ack" {
 			// 	a, ok := v.Description["acknowledged"]

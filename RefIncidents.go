@@ -23,6 +23,8 @@ type Incident struct {
 	UpdatedID   int                    `json:"updated_id,omitempty"`
 	UpdatedStd  string                 `json:"updated_std,omitempty"`
 	UpdatedTime string                 `json:"updated_time,omitempty"`
+	// we add this to inform the acker if we want to ACK the incident
+	ThenWhat string `json:"then_what,omitempty"`
 }
 
 // Description contains details about incidents
