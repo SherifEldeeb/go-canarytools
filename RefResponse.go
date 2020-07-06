@@ -30,3 +30,21 @@ type BasicResponse struct {
 // POST https://111.canary.tools/api/incident/acknowledge
 // application/x-www-form-urlencoded; charset=UTF-8
 // incident_key: incident:mssqllogin:35647bdf2a42b1b44c397ade:221.208.204.112:1589021675
+
+type TokenCreateResponse struct {
+	Canarytoken struct {
+		Canarytoken      string
+		Created          string
+		CreatedPrintable string
+		Enabled          bool
+		FlockID          string
+		Hostname         string
+		Key              string
+		Kind             string
+		Memo             string
+		TriggeredCount   int
+		UpdatedID        int
+		URL              string
+	}
+	Result string
+}

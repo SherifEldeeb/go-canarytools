@@ -38,6 +38,21 @@ func NewClient(domain, apikey string, l *log.Logger) (c *Client, err error) {
 	return
 }
 
+func (c Client) CreateFileTokenFromAPI(kind, memo, flock string) (err error) {
+	switch kind {
+	case "doc-msword", "pdf-acrobat-reader", "msword-macro", "msexcel-macro":
+	default:
+		return errors.New("unsupported token type:" + kind)
+	}
+	u := &url.Values{}
+	u.Add("kind", kind)
+	u.Add("memo", memo)
+
+	var tokencreateresponse TokenCreateResponse
+	err = c.decodeResponse("canarytoken/create", "POST", u, &tokencreateresponse)
+	return
+}
+
 // api constructs the full URL for API querying, it always adds the API auth
 // token, and adds  optional parameters as needed.
 func (c Client) api(endpoint string, params *url.Values) (fullURL *url.URL, err error) {
