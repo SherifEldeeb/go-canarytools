@@ -33,18 +33,18 @@ type BasicResponse struct {
 
 type TokenCreateResponse struct {
 	Canarytoken struct {
-		Canarytoken      string
-		Created          string
-		CreatedPrintable string
-		Enabled          bool
-		FlockID          string
-		Hostname         string
-		Key              string
-		Kind             string
-		Memo             string
-		TriggeredCount   int
-		UpdatedID        int
-		URL              string
-	}
-	Result string
+		Canarytoken      string `json:"canarytoken,omitempty"`
+		Created          string `json:"created,omitempty"`
+		CreatedPrintable string `json:"created_printable,omitempty"`
+		Enabled          bool   `json:"enabled,omitempty"`
+		FlockID          string `json:"flock_id,omitempty"`
+		Hostname         string `json:"hostname,omitempty"`
+		Key              string `json:"key,omitempty"`
+		Kind             string `json:"kind,omitempty"`
+		Memo             string `json:"memo,omitempty"`
+		TriggeredCount   int    `json:"triggered_count,omitempty"`
+		UpdatedID        int    `json:"updated_id,omitempty"`
+		URL              string `json:"url,omitempty"`
+	} `json:"canarytoken,omitempty"`
+	Result string `json:"result,omitempty"`
 }
