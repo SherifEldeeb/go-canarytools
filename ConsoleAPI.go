@@ -80,22 +80,35 @@ func (c Client) DownloadTokenFromAPI(canarytoken, filename string) (n int, err e
 	if resp.StatusCode != 200 {
 		return 0, fmt.Errorf("DownloadTokenFromAPI returned: %d", resp.StatusCode)
 	}
-
-	if !fileExists(filename) {
-		// Create the file
-		out, err := os.Create(filename)
-		if err != nil {
-			return 0, err
-		}
-		defer out.Close()
-
-		// Write the body to file
-		// n, err = io.Copy(out, resp.Body)
-		b, err := ioutil.ReadAll(resp.Body)
-		n, err = out.Write(b)
-	} else {
-		return 0, fmt.Errorf("file exists: %s", filename)
+	resp, err := http.Get("https://f1a7c45a.canary.tools/api/v1/canarytoken/download?auth_token=4c8965b627b8e6968dea5b7279a96b10&canarytoken=" + t.Canarytoken.Canarytoken)
+	if err != nil {
+		l.Fatal(err)
 	}
+
+	out, err := os.Create("filename.docx")
+	if err != nil {
+		l.Fatal(err)
+	}
+	defer out.Close()
+	n, err := io.Copy(out, resp.Body)
+	l.Infof("written %d bytes", n)
+
+
+	// if !fileExists(filename) {
+	// 	// Create the file
+	// 	out, err := os.Create(filename)
+	// 	if err != nil {
+	// 		return 0, err
+	// 	}
+	// 	defer out.Close()
+
+	// 	// Write the body to file
+	// 	// n, err = io.Copy(out, resp.Body)
+	// 	b, err := ioutil.ReadAll(resp.Body)
+	// 	n, err = out.Write(b)
+	// } else {
+	// 	return 0, fmt.Errorf("file exists: %s", filename)
+	// }
 	return
 }
 
