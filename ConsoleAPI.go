@@ -51,8 +51,8 @@ func (c Client) CreateTokenFromAPI(kind, memo, flock string, additionalParams *u
 	u.Set("memo", memo)
 
 	switch kind {
-	case "doc-msword", "pdf-acrobat-reader", "msword-macro", "msexcel-macro":
-	// case "http", "dns", "cloned-web", "doc-msword", "web-image", "windows-dir", "aws-s3", "pdf-acrobat-reader", "msword-macro", "msexcel-macro", "aws-id", "apeeper", "qr-code", "svn", "sql", "fast-redirect", "slow-redirect":
+	// case "doc-msword", "pdf-acrobat-reader", "msword-macro", "msexcel-macro":
+	case "http", "dns", "cloned-web", "doc-msword", "web-image", "windows-dir", "aws-s3", "pdf-acrobat-reader", "msword-macro", "msexcel-macro", "aws-id", "apeeper", "qr-code", "svn", "sql", "fast-redirect", "slow-redirect":
 	// TODO: must check additional params per kind
 	default:
 		return tokencreateresponse, errors.New("unsupported token type: " + kind)
