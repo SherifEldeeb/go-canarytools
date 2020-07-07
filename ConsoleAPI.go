@@ -67,7 +67,7 @@ func (c Client) DownloadTokenFromAPI(canarytoken, filename string) (err error) {
 	params := &url.Values{}
 	params.Set("canarytoken", canarytoken)
 
-	fullURL, err := c.api("canarytokens/download", params)
+	fullURL, err := c.api("canarytoken/download", params)
 	if err != nil {
 		return
 	}
