@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"time"
 
@@ -38,6 +40,7 @@ func NewClient(domain, apikey string, l *log.Logger) (c *Client, err error) {
 	return
 }
 
+// CreateTokenFromAPI uses the canarytoken/create API endpoint to create a token
 func (c Client) CreateTokenFromAPI(kind, memo, flock string, additionalParams *url.Values) (tokencreateresponse TokenCreateResponse, err error) {
 	tokencreateresponse = TokenCreateResponse{}
 	u := &url.Values{}
@@ -48,13 +51,49 @@ func (c Client) CreateTokenFromAPI(kind, memo, flock string, additionalParams *u
 	u.Set("memo", memo)
 
 	switch kind {
-	case "http", "dns", "cloned-web", "doc-msword", "web-image", "windows-dir", "aws-s3", "pdf-acrobat-reader", "msword-macro", "msexcel-macro", "aws-id", "apeeper", "qr-code", "svn", "sql", "fast-redirect", "slow-redirect":
-		// TODO: must check additional params per kind
+	case "doc-msword", "pdf-acrobat-reader", "msword-macro", "msexcel-macro":
+	// case "http", "dns", "cloned-web", "doc-msword", "web-image", "windows-dir", "aws-s3", "pdf-acrobat-reader", "msword-macro", "msexcel-macro", "aws-id", "apeeper", "qr-code", "svn", "sql", "fast-redirect", "slow-redirect":
+	// TODO: must check additional params per kind
 	default:
-		return tokencreateresponse, errors.New("unsupported token type:" + kind)
+		return tokencreateresponse, errors.New("unsupported token type: " + kind)
 	}
 
 	err = c.decodeResponse("canarytoken/create", "POST", u, &tokencreateresponse)
+	return
+}
+
+// DownloadFileToken downloads a file-based token given its ID
+func (c Client) DownloadTokenFromAPI(canarytoken, filename string) (err error) {
+	params := &url.Values{}
+	params.Set("canarytoken", canarytoken)
+
+	fullURL, err := c.api("canarytokens/download", params)
+	if err != nil {
+		return
+	}
+	resp, err := c.httpclient.Get(fullURL.String())
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("DownloadTokenFromAPI returned: %d", resp.StatusCode)
+	}
+
+	if !fileExists(filename) {
+		// Create the file
+		out, err := os.Create(filename)
+		if err != nil {
+			return err
+		}
+		defer out.Close()
+
+		// Write the body to file
+		_, err = io.Copy(out, resp.Body)
+	} else {
+		return fmt.Errorf("file exists: %s", filename)
+	}
 	return
 }
 
