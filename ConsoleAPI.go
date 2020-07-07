@@ -81,29 +81,19 @@ func (c Client) DownloadTokenFromAPI(canarytoken, filename string) (n int64, err
 		return 0, fmt.Errorf("DownloadTokenFromAPI returned: %d", resp.StatusCode)
 	}
 
-	out, err := os.Create(filename)
-	if err != nil {
-		return
+	if !fileExists(filename) {
+		// Create the file
+		out, err := os.Create(filename)
+		if err != nil {
+			return 0, err
+		}
+		defer out.Close()
+
+		// Write the body to file
+		n, err = io.Copy(out, resp.Body)
+	} else {
+		return 0, fmt.Errorf("file exists: %s", filename)
 	}
-	defer out.Close()
-	n, err = io.Copy(out, resp.Body)
-	c.l.Debug("written %d bytes", n)
-
-	// if !fileExists(filename) {
-	// 	// Create the file
-	// 	out, err := os.Create(filename)
-	// 	if err != nil {
-	// 		return 0, err
-	// 	}
-	// 	defer out.Close()
-
-	// 	// Write the body to file
-	// 	// n, err = io.Copy(out, resp.Body)
-	// 	b, err := ioutil.ReadAll(resp.Body)
-	// 	n, err = out.Write(b)
-	// } else {
-	// 	return 0, fmt.Errorf("file exists: %s", filename)
-	// }
 	return
 }
 
