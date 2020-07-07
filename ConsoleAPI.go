@@ -38,17 +38,22 @@ func NewClient(domain, apikey string, l *log.Logger) (c *Client, err error) {
 	return
 }
 
-func (c Client) CreateFileTokenFromAPI(kind, memo, flock string) (err error) {
-	switch kind {
-	case "doc-msword", "pdf-acrobat-reader", "msword-macro", "msexcel-macro":
-	default:
-		return errors.New("unsupported token type:" + kind)
-	}
+func (c Client) CreateTokenFromAPI(kind, memo, flock string, additionalParams *url.Values) (tokencreateresponse TokenCreateResponse, err error) {
+	tokencreateresponse = TokenCreateResponse{}
 	u := &url.Values{}
-	u.Add("kind", kind)
-	u.Add("memo", memo)
+	if additionalParams != nil {
+		u = additionalParams
+	}
+	u.Set("kind", kind)
+	u.Set("memo", memo)
 
-	var tokencreateresponse TokenCreateResponse
+	switch kind {
+	case "http", "dns", "cloned-web", "doc-msword", "web-image", "windows-dir", "aws-s3", "pdf-acrobat-reader", "msword-macro", "msexcel-macro", "aws-id", "apeeper", "qr-code", "svn", "sql", "fast-redirect", "slow-redirect":
+		// TODO: must check additional params per kind
+	default:
+		return tokencreateresponse, errors.New("unsupported token type:" + kind)
+	}
+
 	err = c.decodeResponse("canarytoken/create", "POST", u, &tokencreateresponse)
 	return
 }

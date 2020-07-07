@@ -25,26 +25,28 @@ type BasicResponse struct {
 	Result  string `json:"result,omitempty"`
 }
 
-//
-// {"action":"acknowledged","key":"incident:mssqllogin:35647bdf2a42b1b44c397ade:221.208.204.112:1589021675","result":"success"}
-// POST https://111.canary.tools/api/incident/acknowledge
-// application/x-www-form-urlencoded; charset=UTF-8
-// incident_key: incident:mssqllogin:35647bdf2a42b1b44c397ade:221.208.204.112:1589021675
-
-type TokenCreateResponse struct {
+// TokenCreateResponse is the response received when creating a token
+type TokenCreateResponse struct { // TODO: add all possible fields
 	Canarytoken struct {
-		Canarytoken      string `json:"canarytoken,omitempty"`
-		Created          string `json:"created,omitempty"`
-		CreatedPrintable string `json:"created_printable,omitempty"`
-		Enabled          bool   `json:"enabled,omitempty"`
-		FlockID          string `json:"flock_id,omitempty"`
-		Hostname         string `json:"hostname,omitempty"`
-		Key              string `json:"key,omitempty"`
-		Kind             string `json:"kind,omitempty"`
-		Memo             string `json:"memo,omitempty"`
-		TriggeredCount   int    `json:"triggered_count,omitempty"`
-		UpdatedID        int    `json:"updated_id,omitempty"`
-		URL              string `json:"url,omitempty"`
+		AccessKeyID           string `json:"access_key_id,omitempty"`
+		SecretAccessKey       string `json:"secret_access_key,omitempty"`
+		QRCode                string `json:"qr_code,omitempty"`
+		ClonedWeb             string `json:"cloned_web,omitempty"`
+		BrowserRedirectURL    string `json:"browser_redirect_url,omitempty"`
+		BrowserScannerEnabled bool   `json:"browser_scanner_enabled,omitempty"`
+		Canarytoken           string `json:"canarytoken,omitempty"`
+		Created               string `json:"created,omitempty"`
+		CreatedPrintable      string `json:"created_printable,omitempty"`
+		Enabled               bool   `json:"enabled,omitempty"`
+		FlockID               string `json:"flock_id,omitempty"`
+		Hostname              string `json:"hostname,omitempty"`
+		Key                   string `json:"key,omitempty"`
+		Kind                  string `json:"kind,omitempty"`
+		Memo                  string `json:"memo,omitempty"`
+		TriggeredCount        int    `json:"triggered_count,omitempty"`
+		UpdatedID             int    `json:"updated_id,omitempty"`
+		URL                   string `json:"url,omitempty"`
+		Username              string `json:"username,omitempty"`
 	} `json:"canarytoken,omitempty"`
 	Result string `json:"result,omitempty"`
 }
