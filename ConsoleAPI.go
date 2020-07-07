@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -63,7 +63,7 @@ func (c Client) CreateTokenFromAPI(kind, memo, flock string, additionalParams *u
 }
 
 // DownloadFileToken downloads a file-based token given its ID
-func (c Client) DownloadTokenFromAPI(canarytoken, filename string) (err error) {
+func (c Client) DownloadTokenFromAPI(canarytoken, filename string) (n int, err error) {
 	params := &url.Values{}
 	params.Set("canarytoken", canarytoken)
 
@@ -78,21 +78,23 @@ func (c Client) DownloadTokenFromAPI(canarytoken, filename string) (err error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("DownloadTokenFromAPI returned: %d", resp.StatusCode)
+		return 0, fmt.Errorf("DownloadTokenFromAPI returned: %d", resp.StatusCode)
 	}
 
 	if !fileExists(filename) {
 		// Create the file
 		out, err := os.Create(filename)
 		if err != nil {
-			return err
+			return 0, err
 		}
 		defer out.Close()
 
 		// Write the body to file
-		_, err = io.Copy(out, resp.Body)
+		// n, err = io.Copy(out, resp.Body)
+		b, err := ioutil.ReadAll(resp.Body)
+		n, err = out.Write(b)
 	} else {
-		return fmt.Errorf("file exists: %s", filename)
+		return 0, fmt.Errorf("file exists: %s", filename)
 	}
 	return
 }
