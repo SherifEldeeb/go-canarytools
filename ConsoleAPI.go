@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -63,7 +63,7 @@ func (c Client) CreateTokenFromAPI(kind, memo, flock string, additionalParams *u
 }
 
 // DownloadFileToken downloads a file-based token given its ID
-func (c Client) DownloadTokenFromAPI(canarytoken, filename string) (n int, err error) {
+func (c Client) DownloadTokenFromAPI(canarytoken, filename string) (n int64, err error) {
 	params := &url.Values{}
 	params.Set("canarytoken", canarytoken)
 
@@ -80,19 +80,14 @@ func (c Client) DownloadTokenFromAPI(canarytoken, filename string) (n int, err e
 	if resp.StatusCode != 200 {
 		return 0, fmt.Errorf("DownloadTokenFromAPI returned: %d", resp.StatusCode)
 	}
-	resp, err := http.Get("https://f1a7c45a.canary.tools/api/v1/canarytoken/download?auth_token=4c8965b627b8e6968dea5b7279a96b10&canarytoken=" + t.Canarytoken.Canarytoken)
-	if err != nil {
-		l.Fatal(err)
-	}
 
-	out, err := os.Create("filename.docx")
+	out, err := os.Create(filename)
 	if err != nil {
-		l.Fatal(err)
+		return
 	}
 	defer out.Close()
-	n, err := io.Copy(out, resp.Body)
-	l.Infof("written %d bytes", n)
-
+	n, err = io.Copy(out, resp.Body)
+	c.l.Debug("written %d bytes", n)
 
 	// if !fileExists(filename) {
 	// 	// Create the file
