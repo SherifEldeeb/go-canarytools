@@ -48,6 +48,18 @@ func (c Client) FetchCanarytokenAll() (tokens []Token, err error) {
 	return
 }
 
+// DeleteCanarytoken fetches all canarytokens
+func (c Client) DeleteCanarytoken(canarytoken string) (err error) {
+	br := BasicResponse{}
+	u := &url.Values{}
+	u.Set("canarytoken", canarytoken)
+	err = c.decodeResponse("canarytoken/delete", "POST", u, &br)
+	if br.Result != "success" {
+		err = fmt.Errorf("Error deleting token %s: %s", canarytoken, br.Message)
+	}
+	return
+}
+
 // CreateTokenFromAPI uses the canarytoken/create API endpoint to create a token
 func (c Client) CreateTokenFromAPI(kind, memo, flock string, additionalParams *url.Values) (tokencreateresponse TokenCreateResponse, err error) {
 	tokencreateresponse = TokenCreateResponse{}
