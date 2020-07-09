@@ -40,6 +40,14 @@ func NewClient(domain, apikey string, l *log.Logger) (c *Client, err error) {
 	return
 }
 
+// FetchCanarytokenAll fetches all canarytokens
+func (c Client) FetchCanarytokenAll() (tokens []Token, err error) {
+	fetchalltokenresponse := FetchAllTokensResponse{}
+	err = c.decodeResponse("canarytokens/fetch", "GET", nil, &fetchalltokenresponse)
+	tokens = fetchalltokenresponse.Tokens
+	return
+}
+
 // CreateTokenFromAPI uses the canarytoken/create API endpoint to create a token
 func (c Client) CreateTokenFromAPI(kind, memo, flock string, additionalParams *url.Values) (tokencreateresponse TokenCreateResponse, err error) {
 	tokencreateresponse = TokenCreateResponse{}
@@ -49,6 +57,9 @@ func (c Client) CreateTokenFromAPI(kind, memo, flock string, additionalParams *u
 	}
 	u.Set("kind", kind)
 	u.Set("memo", memo)
+	if flock != "" {
+		u.Set("flock_id", flock)
+	}
 
 	switch kind {
 	// case "doc-msword", "pdf-acrobat-reader", "msword-macro", "msexcel-macro":
@@ -62,7 +73,7 @@ func (c Client) CreateTokenFromAPI(kind, memo, flock string, additionalParams *u
 	return
 }
 
-// DownloadFileToken downloads a file-based token given its ID
+// DownloadTokenFromAPI downloads a file-based token given its ID
 func (c Client) DownloadTokenFromAPI(canarytoken, filename string) (n int64, err error) {
 	params := &url.Values{}
 	params.Set("canarytoken", canarytoken)
@@ -94,6 +105,12 @@ func (c Client) DownloadTokenFromAPI(canarytoken, filename string) (n int64, err
 	} else {
 		return 0, fmt.Errorf("file exists: %s", filename)
 	}
+	return
+}
+
+// IsFlockIDExists checks if flock exists
+func (c Client) IsFlockIDExists(flockid string) (exists bool, err error) {
+
 	return
 }
 
