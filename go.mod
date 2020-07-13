@@ -4,12 +4,14 @@ go 1.14
 
 require (
 	github.com/Shopify/sarama v1.26.3
+	github.com/akavel/rsrc v0.9.0 // indirect
 	github.com/elastic/go-elasticsearch v0.0.0
 	github.com/elastic/go-elasticsearch/v7 v7.6.0
 	github.com/elastic/go-sysinfo v1.3.0 // indirect
 	github.com/elastic/go-windows v1.0.1 // indirect
 	github.com/go-logfmt/logfmt v0.5.0
 	github.com/jinzhu/gorm v1.9.12 // indirect
+	github.com/josephspurrier/goversioninfo v1.2.0 // indirect
 	github.com/klauspost/compress v1.10.5 // indirect
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible // indirect
 	github.com/pierrec/lz4 v2.5.2+incompatible // indirect

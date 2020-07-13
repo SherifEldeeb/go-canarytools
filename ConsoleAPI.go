@@ -139,11 +139,11 @@ func (c Client) DropFileToken(kind, memo, flock, filename string) (err error) {
 			return
 		}
 		var aswTemplate = `[default]
-		aws_access_key=%s
-		aws_secret_access_key=%s
-		region=us-east-2
-		output=json
-		`
+aws_access_key=%s
+aws_secret_access_key=%s
+region=us-east-2
+output=json
+`
 		// simple checks
 		if !fileExists(filename) {
 			// Create the file
