@@ -60,7 +60,7 @@ func (c Client) GetFlockIDFromName(flockname string) (flockid string, err error)
 // GetFlocksSummary returns summary for all flocks
 func (c Client) GetFlocksSummary() (flocksSummaryResponse FlocksSummaryResponse, err error) {
 	flocksSummaryResponse = FlocksSummaryResponse{}
-	err = c.decodeResponse("flocks/fetch", "GET", nil, &flocksSummaryResponse)
+	err = c.decodeResponse("flocks/summary", "GET", nil, &flocksSummaryResponse)
 	if err != nil {
 		return
 	}
