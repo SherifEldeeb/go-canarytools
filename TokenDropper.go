@@ -8,19 +8,24 @@ type TokenDropper struct {
 	// configs
 	cfg TokenDropperConfig
 
-	// Work chans
-	// incidentsChan         chan Incident
-	// filteredIncidentsChan chan Incident
-	// outChan               chan []byte
-	// incidentAckerChan     chan []byte
-
-	// interfaces
-	// feeder        Feeder
-	// incidentAcker IncidentAcker
-	// filter        Filter
-	// mapper        Mapper
-	// forwarder     Forwarder
+	// console API client
+	C *Client
 
 	// logger
 	l *log.Logger
+}
+
+// NewTokenDropper returns a TokenDropper from TokenDropperConfig.
+// it will check for valid configs, and establish a connection to the console.
+func NewTokenDropper(cfg TokenDropperConfig, l *log.Logger) (tdropper TokenDropper, err error) {
+	tdropper.cfg = cfg
+	c, err := NewClient(cfg.ImConsoleAPIDomain, cfg.ImConsoleAPIKey, l)
+	if err != nil {
+		return
+	}
+	tdropper.C = c
+	tdropper.l = l
+
+	err = c.Ping()
+	return
 }
