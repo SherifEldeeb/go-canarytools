@@ -21,13 +21,14 @@ type TokenDropperConfig struct {
 // GeneralTokenDropperConfig contains general configs for TokenDropper
 type GeneralTokenDropperConfig struct {
 	// General flags
-	MinFiles        int    // min number of files per directory
-	MaxFiles        int    // max number of files per directory
-	RandYearsBack   int    // Randomize dates between Now() and 'years' back
-	LocalTokenProxy bool   // start as a local token proxy?
-	FactoryAuth     string // Token Factory auth string
-	DropWhere       string // where to drop tokens?
-	Kind            string // what kind of tokens to drop
+	MinFiles        int      // min number of files per directory
+	MaxFiles        int      // max number of files per directory
+	RandYearsBack   int      // Randomize dates between Now() and 'years' back
+	LocalTokenProxy bool     // start as a local token proxy?
+	FactoryAuth     string   // Token Factory auth string
+	DropWhere       string   // where to drop tokens?
+	KindsStr        string   // comma-separated string with what kind of tokens to drop
+	Kinds           []string // what kind of tokens to drop
 }
 
 // ChirpForwarderConfig contains configs for the forwarder
