@@ -124,10 +124,20 @@ func (c Client) DeleteCanarytoken(canarytoken string) (err error) {
 
 // DropFileToken drops a file token
 func (c Client) DropFileToken(kind, memo, flock, filename string) (err error) {
+	c.l.WithFields(log.Fields{
+		"kind":     kind,
+		"memo":     memo,
+		"flock":    flock,
+		"filename": filename,
+	}).Debugf("Generating Token")
 	var tcr = TokenCreateResponse{}
 
 	switch kind {
 	case "aws-id":
+		tcr, err = c.CreateTokenFromAPI(kind, memo, flock, nil)
+		if err != nil {
+			return
+		}
 		var aswTemplate = `[default]
 		aws_access_key=%s
 		aws_secret_access_key=%s
