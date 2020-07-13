@@ -29,6 +29,7 @@ type GeneralTokenDropperConfig struct {
 	DropWhere       string   // where to drop tokens?
 	KindsStr        string   // comma-separated string with what kind of tokens to drop
 	Kinds           []string // what kind of tokens to drop
+	LogLevel        string   // loglevel
 }
 
 // ChirpForwarderConfig contains configs for the forwarder
