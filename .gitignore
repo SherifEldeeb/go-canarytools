@@ -22,3 +22,4 @@ cmd/ChirpForwarder/certs/
 cmd/ChirpForwarder/canaryChirps.json
 cmd/sandbox
 filenames.txt
+cmd/TokenDropper

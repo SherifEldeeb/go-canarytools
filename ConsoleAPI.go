@@ -122,6 +122,49 @@ func (c Client) DeleteCanarytoken(canarytoken string) (err error) {
 	return
 }
 
+// DropFileToken drops a file token
+func (c Client) DropFileToken(kind, memo, flock, filename string) (err error) {
+	var tcr = TokenCreateResponse{}
+
+	switch kind {
+	case "aws-id":
+		var aswTemplate = `[default]
+		aws_access_key=%s
+		aws_secret_access_key=%s
+		region=us-east-2
+		output=json
+		`
+		// simple checks
+		if !fileExists(filename) {
+			// Create the file
+			out, err := os.Create(filename)
+			if err != nil {
+				return err
+			}
+			defer out.Close()
+
+			// Write the body to file
+			_, err = out.WriteString(fmt.Sprintf(aswTemplate, tcr.Canarytoken.AccessKeyID, tcr.Canarytoken.SecretAccessKey))
+		} else {
+			return fmt.Errorf("file exists: %s", filename)
+		}
+	case "doc-msword", "pdf-acrobat-reader", "msword-macro", "msexcel-macro":
+		tcr, err = c.CreateTokenFromAPI(kind, memo, flock, nil)
+		if err != nil {
+			return
+		}
+		_, err = c.DownloadTokenFromAPI(tcr.Canarytoken.Canarytoken, filename)
+	default:
+		err = fmt.Errorf("unsupported Canarytoken: %s", kind)
+		return
+	}
+	return
+}
+
+func (c Client) dropAWSToken(tcr TokenCreateResponse, path string) (err error) {
+	return
+}
+
 // CreateTokenFromAPI uses the canarytoken/create API endpoint to create a token
 func (c Client) CreateTokenFromAPI(kind, memo, flock string, additionalParams *url.Values) (tokencreateresponse TokenCreateResponse, err error) {
 	tokencreateresponse = TokenCreateResponse{}
