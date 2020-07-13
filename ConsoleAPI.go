@@ -23,6 +23,68 @@ type Client struct {
 	l          *log.Logger
 }
 
+// GetFlockNameFromID retrieves the flock name given its ID
+func (c Client) GetFlockNameFromID(flockid string) (flockname string, err error) {
+	fsr, err := c.GetFlocksSummary()
+	if err != nil {
+		return
+	}
+
+	for fid, flockSummary := range fsr.FlocksSummary {
+		if flockid == fid {
+			flockname = flockSummary.Name
+			return
+		}
+	}
+	err = fmt.Errorf("flock_id does not exist: %s", flockid)
+	return
+}
+
+// GetFlockIDFromName retrieves the flock ID given its name
+func (c Client) GetFlockIDFromName(flockname string) (flockid string, err error) {
+	fsr, err := c.GetFlocksSummary()
+	if err != nil {
+		return
+	}
+
+	for fid, flockSummary := range fsr.FlocksSummary {
+		if flockSummary.Name == flockname {
+			flockid = fid
+			return
+		}
+	}
+	err = fmt.Errorf("flock name does not exist: %s", flockname)
+	return
+}
+
+// GetFlocksSummary returns summary for all flocks
+func (c Client) GetFlocksSummary() (flocksSummaryResponse FlocksSummaryResponse, err error) {
+	flocksSummaryResponse = FlocksSummaryResponse{}
+	err = c.decodeResponse("flocks/fetch", "GET", nil, &flocksSummaryResponse)
+	if err != nil {
+		return
+	}
+	if flocksSummaryResponse.Result != "success" {
+		err = fmt.Errorf(flocksSummaryResponse.Message)
+	}
+	return
+}
+
+// GetFlockSummary checks if flock exists
+func (c Client) GetFlockSummary(flockid string) (flocksummaryresponse FlockSummaryResponse, err error) {
+	flocksummaryresponse = FlockSummaryResponse{}
+	u := &url.Values{}
+	u.Set("flock_id", flockid)
+	err = c.decodeResponse("flock/fetch", "GET", u, &flocksummaryresponse)
+	if err != nil {
+		return
+	}
+	if flocksummaryresponse.Result != "success" {
+		err = fmt.Errorf(flocksummaryresponse.Message)
+	}
+	return
+}
+
 // NewClient creates a new client from domain & API Key
 func NewClient(domain, apikey string, l *log.Logger) (c *Client, err error) {
 	c = &Client{}
@@ -117,12 +179,6 @@ func (c Client) DownloadTokenFromAPI(canarytoken, filename string) (n int64, err
 	} else {
 		return 0, fmt.Errorf("file exists: %s", filename)
 	}
-	return
-}
-
-// IsFlockIDExists checks if flock exists
-func (c Client) IsFlockIDExists(flockid string) (exists bool, err error) {
-
 	return
 }
 

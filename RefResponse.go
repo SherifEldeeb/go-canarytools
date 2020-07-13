@@ -1,5 +1,17 @@
 package canarytools
 
+// FlockSummaryResponse is the response received from flock/summary endpoiont
+type FlockSummaryResponse struct {
+	DifferentTokenNum int           `json:"different_token_num,omitempty"`
+	DisabledTokens    int           `json:"disabled_tokens,omitempty"`
+	IncidentCount     int           `json:"incident_count,omitempty"`
+	Result            string        `json:"result,omitempty"`
+	TopTokens         []interface{} `json:"top_tokens,omitempty"`
+	TotalTokens       int           `json:"total_tokens,omitempty"`
+	TriggeredTokens   int           `json:"triggered_tokens,omitempty"`
+	Message           string        `json:"message,omitempty"`
+}
+
 // FetchAllTokensResponse is the response received from canarytokens/fetch endpoint
 type FetchAllTokensResponse struct {
 	Result string  `json:"result"`
@@ -92,6 +104,7 @@ type FlocksSummaryResponse struct {
 	FlocksSummary               map[string]FlockSummary `json:"flocks_summary,omitempty"`
 	Result                      string                  `json:"result,omitempty"`
 	UnackedDeviceIncidentCounts map[string]int          `json:"unacked_device_incident_counts,omitempty"`
+	Message                     string                  `json:"message,omitempty"`
 }
 
 // FlockSummary represents a summary for a single flock
