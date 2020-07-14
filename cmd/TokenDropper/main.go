@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"os"
 	"os/user"
+	"strings"
 	"time"
 
 	"github.com/go-logfmt/logfmt"
@@ -29,6 +30,10 @@ func init() {
 
 func main() {
 	flag.Parse()
+
+	for _, k := range strings.Split(cfg.KindsStr, ",") {
+		cfg.Kinds = append(cfg.Kinds, strings.TrimSpace(k))
+	}
 
 	// Set LogLevel
 	l := log.New()
@@ -82,6 +87,8 @@ func main() {
 			l.Error(err)
 			continue
 		}
+		rtime := GetRandomDate(2)
+		os.Chtimes(n, rtime, rtime)
 	}
 }
 

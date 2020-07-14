@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"strings"
 
 	"github.com/SherifEldeeb/canarytools"
 )
@@ -17,10 +16,6 @@ func populateVarsFromFlags(cfg *canarytools.TokenDropperConfig) {
 	flag.StringVar(&cfg.ImConsoleAPIKey, "apikey", "", "API Key")
 	flag.StringVar(&cfg.ImConsoleAPIDomain, "domain", "", "canarytools domain")
 	flag.StringVar(&cfg.LogLevel, "loglevel", "info", "set loglevel, can be one of ('info', 'warning', 'debug' or 'trace')")
-
-	for _, k := range strings.Split(cfg.KindsStr, ",") {
-		cfg.Kinds = append(cfg.Kinds, strings.TrimSpace(k))
-	}
 
 	if cfg.MaxFiles < cfg.MinFiles {
 		panic("Min files is Larger than Max files :/")
