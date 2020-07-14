@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"os"
 	"os/user"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -31,6 +32,7 @@ func init() {
 func main() {
 	flag.Parse()
 
+	// overwrite from flag
 	for _, k := range strings.Split(cfg.KindsStr, ",") {
 		cfg.Kinds = append(cfg.Kinds, strings.TrimSpace(k))
 	}
@@ -70,7 +72,7 @@ func main() {
 			"kind":     kind,
 			"filename": n,
 		}).Info("Generating Token")
-		memo, err := CreateMemo()
+		memo, err := CreateMemo(n)
 		if err != nil {
 			l.Error(err)
 			continue
@@ -82,6 +84,7 @@ func main() {
 			"memo":     memo,
 		}).Debug("Generating Token")
 		// drop
+		n = filepath.Join(cfg.DropWhere, n)
 		err = c.DropFileToken(kind, memo, "", n)
 		if err != nil {
 			l.Error(err)
@@ -98,13 +101,13 @@ func pick(s []string) string {
 
 // CreateMemo creates a meaningful memo to be included during Canarytoken creation
 // value is logfmt encoded for easier processing
-func CreateMemo() (memo string, err error) {
+func CreateMemo(filename string) (memo string, err error) {
 	keyVals := []interface{}{
 		"Generator", "TokenDropper",
 	}
 
 	// Add time
-	keyVals = append(keyVals, "Timestamp", time.Now().UTC().Format(time.RFC3339))
+	// keyVals = append(keyVals, "Timestamp", time.Now().UTC().Format(time.RFC3339))
 
 	// Add username who run the dropper
 	u, err := user.Current()
@@ -119,6 +122,9 @@ func CreateMemo() (memo string, err error) {
 		return
 	}
 	keyVals = append(keyVals, "Hostname", hn)
+
+	// Add original filename
+	keyVals = append(keyVals, "OriginalFilename", filename)
 
 	lf, err := logfmt.MarshalKeyvals(keyVals...)
 	if err != nil {
