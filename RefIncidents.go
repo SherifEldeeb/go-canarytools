@@ -29,26 +29,28 @@ type Incident struct {
 
 // Description contains details about incidents
 type Description struct {
-	Acknowledged   string                   `json:"acknowledged,omitempty"`
-	Created        string                   `json:"created,omitempty"`
-	CreatedStd     string                   `json:"created_std,omitempty"`
-	Description    string                   `json:"description,omitempty"`
-	DstHost        string                   `json:"dst_host,omitempty"`
-	DstPort        string                   `json:"dst_port,omitempty"`
-	Events         []map[string]interface{} `json:"events,omitempty"`
-	EventsCount    string                   `json:"events_count,omitempty"`
-	IPAddress      string                   `json:"ip_address,omitempty"`
-	Ippers         string                   `json:"ippers,omitempty"`
-	LocalTime      string                   `json:"local_time,omitempty"`
-	Logtype        string                   `json:"logtype,omitempty"`
-	MACAddress     string                   `json:"mac_address,omitempty"`
-	Memo           string                   `json:"memo,omitempty"`
-	Name           string                   `json:"name,omitempty"`
-	NodeID         string                   `json:"node_id,omitempty"`
-	Notified       string                   `json:"notified,omitempty"`
-	SrcHost        string                   `json:"src_host,omitempty"`
-	SrcHostReverse string                   `json:"src_host_reverse,omitempty"`
-	SrcPort        string                   `json:"src_port,omitempty"`
+	Acknowledged       string                   `json:"acknowledged,omitempty"`
+	Created            string                   `json:"created,omitempty"`
+	CreatedStd         string                   `json:"created_std,omitempty"`
+	Description        string                   `json:"description,omitempty"`
+	DstHost            string                   `json:"dst_host,omitempty"`
+	DstPort            string                   `json:"dst_port,omitempty"`
+	Events             []map[string]interface{} `json:"events,omitempty"`
+	EventsCount        string                   `json:"events_count,omitempty"`
+	FlockID            string                   `json:"flock_id"`
+	IPAddress          string                   `json:"ip_address,omitempty"`
+	Ippers             string                   `json:"ippers,omitempty"`
+	LocalTime          string                   `json:"local_time,omitempty"`
+	Logtype            string                   `json:"logtype,omitempty"`
+	MACAddress         string                   `json:"mac_address,omitempty"`
+	MatchedAnnotations string                   `json:"matched_annotations"`
+	Memo               string                   `json:"memo,omitempty"`
+	Name               string                   `json:"name,omitempty"`
+	NodeID             string                   `json:"node_id,omitempty"`
+	Notified           string                   `json:"notified,omitempty"`
+	SrcHost            string                   `json:"src_host,omitempty"`
+	SrcHostReverse     string                   `json:"src_host_reverse,omitempty"`
+	SrcPort            string                   `json:"src_port,omitempty"`
 }
 
 // Event is part of Incidents (typically in an array),
