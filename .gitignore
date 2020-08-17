@@ -26,3 +26,5 @@ cmd/TokenDropper/filenames*
 cmd/TokenDropper/test/
 .DS_Store
 cmd/ChirpForwarder/ChirpForwarder
+cmd/TokenDropper/TokenDropper
+lastcheck

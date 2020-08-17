@@ -111,13 +111,13 @@ func (cf *ChirpForwarder) setFeeder() {
 
 		// building a new clint, testing connection...
 		cf.l.Debug("building new client and pinging console")
-		c, err := NewConsoleAPIFeeder(cf.cfg.ImConsoleAPIDomain, cf.cfg.ImConsoleAPIKey, cf.cfg.ThenWhat, cf.cfg.SinceWhenString, cf.cfg.WhichIncidents, cf.cfg.ImConsoleAPIFetchInterval, cf.l)
+		c, err := NewConsoleAPIFeeder(cf.cfg.ImConsoleAPIDomain, cf.cfg.ImConsoleAPIKey, cf.cfg.ThenWhat, cf.cfg.SinceWhenString, cf.cfg.WhichIncidents, cf.cfg.FlockName, cf.cfg.ImConsoleAPIFetchInterval, cf.l)
 		if err != nil {
 			cf.l.WithFields(log.Fields{
 				"err": err,
-			}).Fatal("error during creating client, or pinging console")
+			}).Fatal("error during starting up")
 		}
-		cf.l.Debug("ping successful! we're good to go")
+		cf.l.Debug("initial setup successful! we're good to go")
 		cf.feeder = c
 		cf.incidentAcker = c
 	default:

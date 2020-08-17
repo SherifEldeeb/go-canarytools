@@ -21,10 +21,12 @@ type ConsoleAPIFeeder struct {
 	thenWhat          string
 	whichIncidents    string
 	lastCheckFile     string
+	flockID           string
+	flockName         string
 }
 
 // NewConsoleAPIFeeder creates a new ConsolevAPI feeder
-func NewConsoleAPIFeeder(domain, apikey, thenWhat, sinceWhen, whichIncidents string, fetchInterval int, l *log.Logger) (c *ConsoleAPIFeeder, err error) {
+func NewConsoleAPIFeeder(domain, apikey, thenWhat, sinceWhen, whichIncidents, flockName string, fetchInterval int, l *log.Logger) (c *ConsoleAPIFeeder, err error) {
 	c = &ConsoleAPIFeeder{}
 	c.Client, err = NewClient(domain, apikey, l)
 	if err != nil {
@@ -81,6 +83,7 @@ func NewConsoleAPIFeeder(domain, apikey, thenWhat, sinceWhen, whichIncidents str
 	c.httpclient = &http.Client{Timeout: 5 * time.Second} // TODO: provide ability to configure
 	c.domain = domain
 	c.apikey = apikey
+	c.flockName = flockName
 	c.baseURL, err = url.Parse(fmt.Sprintf("https://%s.canary.tools/api/v1/", domain))
 	if err != nil {
 		return
@@ -97,9 +100,17 @@ func NewConsoleAPIFeeder(domain, apikey, thenWhat, sinceWhen, whichIncidents str
 	if err != nil {
 		return
 	}
+	// check if flock exists
+	if flockName != "" {
+		c.flockID, err = c.GetFlockIDFromName(flockName)
+		if err != nil {
+			return
+		}
+	}
 	return
 }
 
+// WriteLastCheckRegister writes last time it checked to file
 func (c *ConsoleAPIFeeder) WriteLastCheckRegister(t time.Time) (err error) {
 	err = c.lastCheckRegister.Truncate(0)
 	if err != nil {
@@ -146,7 +157,12 @@ func (c *ConsoleAPIFeeder) Feed(incidnetsChan chan<- Incident) {
 				"UpdatedID": v.UpdatedID,
 			}).Debug(v.Summary)
 			v.ThenWhat = c.thenWhat
-			incidnetsChan <- v
+			// check for flock
+			if flockID, ok := v.Description["flock_id"]; ok { // we have a flock_id
+				if c.flockName == "" || c.flockID == flockID { // if flockName is empty, or flockID matches flock_id, forward
+					incidnetsChan <- v
+				}
+			}
 			// if c.thenWhat == "ack" {
 			// 	a, ok := v.Description["acknowledged"]
 			// 	if ok {
