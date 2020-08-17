@@ -24,3 +24,5 @@ cmd/sandbox
 filenames.txt
 cmd/TokenDropper/filenames*
 cmd/TokenDropper/test/
+.DS_Store
+cmd/ChirpForwarder/ChirpForwarder
