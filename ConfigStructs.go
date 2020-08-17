@@ -71,6 +71,8 @@ type GeneralChirpForwarderConfig struct {
 	SinceWhenString string // CANARY_SINCE
 	WhichIncidents  string // CANARY_WHICH
 	IncidentFilter  string // CANARY_FILTER
+	FlockName       string // CANARY_FLOCKNAME
+	FlockID         string // CANARY_FLOCKID
 }
 
 // SSLConfig contains SSL related configs

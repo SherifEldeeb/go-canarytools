@@ -36,6 +36,9 @@ func popultaeVarsFromEnv(cfg *canarytools.ChirpForwarderConfig) {
 	if cfg.IncidentFilter == "" {
 		cfg.IncidentFilter, _ = os.LookupEnv("CANARY_FILTER")
 	}
+	if cfg.FlockName == "" {
+		cfg.IncidentFilter, _ = os.LookupEnv("CANARY_FLOCKNAME")
+	}
 
 	// SSL/TLS Client configs
 	// used by TCP &cfg. Elastic output
@@ -145,6 +148,7 @@ func populateVarsFromFlags(cfg *canarytools.ChirpForwarderConfig) {
 		if .canary.lastcheck file does not exist, it will default to events from last 7 days`)
 	flag.StringVar(&cfg.WhichIncidents, "which", "", "which incidents to fetch? can be one of ('all', or 'unacknowledged')")
 	flag.StringVar(&cfg.IncidentFilter, "filter", "", "filter to apply to incident ('none', or 'dropevents')")
+	flag.StringVar(&cfg.FlockName, "flock", "", "Flock name to process incidents for 'if left empty, all incidents will be processed'")
 
 	// SSL/TLS Client configs
 	// used by TCP &cfg. Elastic output
