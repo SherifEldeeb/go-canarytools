@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -54,12 +55,55 @@ func main() {
 	}
 
 	// start
+	p, err := os.Executable()
+	if err != nil {
+		l.Fatal("couldn't get current directory")
+	}
+	l.Info("running from:", p)
+
+	d := filepath.Dir(p)  // directory
+	e := filepath.Base(p) // exe name
+	// get count from exe name?
+	countFromName, err := strconv.Atoi(e)
+	if err == nil {
+		if countFromName > 15 {
+			l.Warn("count from name > 15 ... will set to 15")
+			countFromName = 15
+		}
+		cfg.FilesCount = countFromName
+	}
+
+	err = os.Chdir(d)
+	if err != nil {
+		l.Fatal("couldn't change directory")
+	}
+
+	if cfg.ImConsoleTokenFile == "" {
+		cfg.ImConsoleTokenFile = filepath.Join(d, "canarytools.config")
+	}
+
+	// do we have canarytools.config in same path? get data from it...
+	if _, err := os.Stat(cfg.ImConsoleTokenFile); os.IsNotExist(err) {
+		l.Fatal("canarytools.config does not exist!")
+	}
+
+	cfg.ImConsoleAPIKey, cfg.ImConsoleAPIDomain, err = canarytools.LoadTokenFile(cfg.ImConsoleTokenFile)
+	if err != nil || cfg.ImConsoleAPIDomain == "" || cfg.ImConsoleAPIKey == "" {
+		l.WithFields(log.Fields{
+			"err":    err,
+			"api":    cfg.ImConsoleAPIKey,
+			"domain": cfg.ImConsoleAPIDomain,
+		}).Fatal("error parsing token file")
+	}
+
+	// filename is number of files?
+
 	c, err := canarytools.NewClient(cfg.ImConsoleAPIDomain, cfg.ImConsoleAPIKey, l)
 	if err != nil {
 		l.Fatal(err)
 	}
 
-	fileCount := rand.Intn(cfg.MaxFiles-cfg.MinFiles) + cfg.MinFiles + 1
+	fileCount := cfg.FilesCount
 	log.Info(fileCount)
 	for i := 0; i < fileCount; i++ {
 		kind := pick(cfg.Kinds)

@@ -21,8 +21,7 @@ type TokenDropperConfig struct {
 // GeneralTokenDropperConfig contains general configs for TokenDropper
 type GeneralTokenDropperConfig struct {
 	// General flags
-	MinFiles        int      // min number of files per directory
-	MaxFiles        int      // max number of files per directory
+	FilesCount      int      // number of files per directory
 	RandYearsBack   int      // Randomize dates between Now() and 'years' back
 	LocalTokenProxy bool     // start as a local token proxy?
 	FactoryAuth     string   // Token Factory auth string
