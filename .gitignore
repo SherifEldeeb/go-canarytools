@@ -28,3 +28,4 @@ cmd/TokenDropper/test/
 cmd/ChirpForwarder/ChirpForwarder
 cmd/TokenDropper/TokenDropper
 lastcheck
+TokenDropper

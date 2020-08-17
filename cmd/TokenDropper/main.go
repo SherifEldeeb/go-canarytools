@@ -78,26 +78,30 @@ func main() {
 		l.Fatal("couldn't change directory")
 	}
 
-	if cfg.ImConsoleTokenFile == "" {
-		cfg.ImConsoleTokenFile = filepath.Join(d, "canarytools.config")
+	// try to populte domain hash and API key
+	// either from file or params...
+	// first, we don't got api key and domain through flags? let's try to load them from ile
+	if cfg.ImConsoleAPIKey == "" && cfg.ImConsoleAPIDomain == "" {
+		// if we don't have them, we try to load it from same drectory
+		if cfg.ImConsoleTokenFile == "" { // if not
+			cfg.ImConsoleTokenFile = filepath.Join(d, "canarytools.config")
+		}
+		// do we have canarytools.config in same path? get data from it...
+		if _, err := os.Stat(cfg.ImConsoleTokenFile); os.IsNotExist(err) {
+			l.Fatal("canarytools.config does not exist, and we couldn't get domain hash and API key!")
+		}
+		cfg.ImConsoleAPIKey, cfg.ImConsoleAPIDomain, err = canarytools.LoadTokenFile(cfg.ImConsoleTokenFile)
+		if err != nil || cfg.ImConsoleAPIDomain == "" || cfg.ImConsoleAPIKey == "" {
+			l.WithFields(log.Fields{
+				"err":    err,
+				"api":    cfg.ImConsoleAPIKey,
+				"domain": cfg.ImConsoleAPIDomain,
+			}).Fatal("error parsing token file")
+		}
 	}
-
-	// do we have canarytools.config in same path? get data from it...
-	if _, err := os.Stat(cfg.ImConsoleTokenFile); os.IsNotExist(err) {
-		l.Fatal("canarytools.config does not exist!")
-	}
-
-	cfg.ImConsoleAPIKey, cfg.ImConsoleAPIDomain, err = canarytools.LoadTokenFile(cfg.ImConsoleTokenFile)
-	if err != nil || cfg.ImConsoleAPIDomain == "" || cfg.ImConsoleAPIKey == "" {
-		l.WithFields(log.Fields{
-			"err":    err,
-			"api":    cfg.ImConsoleAPIKey,
-			"domain": cfg.ImConsoleAPIDomain,
-		}).Fatal("error parsing token file")
-	}
+	// by now, we should have both key and domain
 
 	// filename is number of files?
-
 	c, err := canarytools.NewClient(cfg.ImConsoleAPIDomain, cfg.ImConsoleAPIKey, l)
 	if err != nil {
 		l.Fatal(err)
