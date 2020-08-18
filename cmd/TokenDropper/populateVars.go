@@ -15,7 +15,7 @@ func populateVarsFromFlags(cfg *canarytools.TokenDropperConfig) {
 	flag.StringVar(&cfg.ImConsoleAPIKey, "apikey", "", "API Key")
 	flag.StringVar(&cfg.ImConsoleAPIDomain, "domain", "", "canarytools domain")
 	flag.StringVar(&cfg.LogLevel, "loglevel", "info", "set loglevel, can be one of ('info', 'warning', 'debug' or 'trace')")
+	flag.StringVar(&cfg.FlockName, "flock", "", "the Flock which created tokens will belong to 'if empty, will be assigned to Defualt flock'")
 
 	flag.StringVar(&cfg.ImConsoleTokenFile, "tokenfile", "", "the token file 'canarytools.config' which contains api token and the domain")
-
 }

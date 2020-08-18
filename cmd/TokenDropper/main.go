@@ -3,16 +3,12 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"math/rand"
 	"os"
-	"os/user"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/go-logfmt/logfmt"
 
 	log "github.com/sirupsen/logrus"
 
@@ -141,70 +137,4 @@ func main() {
 		rtime := GetRandomDate(2)
 		os.Chtimes(n, rtime, rtime)
 	}
-}
-
-func pick(s []string) string {
-	return s[rand.Intn(len(s))]
-}
-
-// CreateMemo creates a meaningful memo to be included during Canarytoken creation
-// value is logfmt encoded for easier processing
-func CreateMemo(filename string) (memo string, err error) {
-	keyVals := []interface{}{
-		"Generator", "TokenDropper",
-	}
-
-	// Add time
-	// keyVals = append(keyVals, "Timestamp", time.Now().UTC().Format(time.RFC3339))
-
-	// Add username who run the dropper
-	u, err := user.Current()
-	if err != nil {
-		return
-	}
-	keyVals = append(keyVals, "Username", u.Username)
-
-	// Get Hostname
-	hn, err := os.Hostname()
-	if err != nil {
-		return
-	}
-	keyVals = append(keyVals, "Hostname", hn)
-
-	// Add original filename
-	keyVals = append(keyVals, "OriginalFilename", filename)
-
-	lf, err := logfmt.MarshalKeyvals(keyVals...)
-	if err != nil {
-		return
-	}
-	memo = string(lf)
-	return
-}
-
-func GetRandomTokenName(kind string) (name string, err error) {
-	var n string // name
-	var e string // ext
-	switch kind {
-	case "aws-id":
-		n = pick(awsFileNames)
-		e = "txt"
-	case "doc-msword":
-		n = pick(fileNames)
-		e = "docx"
-	case "pdf-acrobat-reader":
-		n = pick(fileNames)
-		e = "pdf"
-	case "msword-macro":
-		n = pick(fileNames)
-		e = "docm"
-	case "msexcel-macro":
-		n = pick(fileNames)
-		e = "xlsm"
-	default:
-		err = fmt.Errorf("unsupported Canarytoken: %s", kind)
-		return
-	}
-	name = RandomizeName(n, e)
-	return
 }

@@ -21,14 +21,17 @@ type TokenDropperConfig struct {
 // GeneralTokenDropperConfig contains general configs for TokenDropper
 type GeneralTokenDropperConfig struct {
 	// General flags
-	FilesCount      int      // number of files per directory
-	RandYearsBack   int      // Randomize dates between Now() and 'years' back
-	LocalTokenProxy bool     // start as a local token proxy?
-	FactoryAuth     string   // Token Factory auth string
-	DropWhere       string   // where to drop tokens?
-	KindsStr        string   // comma-separated string with what kind of tokens to drop
-	Kinds           []string // what kind of tokens to drop
-	LogLevel        string   // loglevel
+	FilesCount             int      // number of files per directory
+	RandYearsBack          int      // Randomize dates between Now() and 'years' back
+	LocalTokenProxy        bool     // start as a local token proxy?
+	FactoryAuth            string   // Token Factory auth string
+	DropWhere              string   // where to drop tokens?
+	KindsStr               string   // comma-separated string with what kind of tokens to drop
+	Kinds                  []string // what kind of tokens to drop
+	LogLevel               string   // loglevel
+	FlockName              string   // Name of the flock
+	FlockID                string   // Flock ID
+	CreateFlockIfNotExists bool     // should we create the flock if it didn't exist?
 }
 
 // ChirpForwarderConfig contains configs for the forwarder

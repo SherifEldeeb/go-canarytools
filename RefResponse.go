@@ -172,3 +172,10 @@ type FlockSummary struct {
 	} `json:"settings,omitempty"`
 	TotalTokens int `json:"total_tokens,omitempty"`
 }
+
+// FlockCreateResponse is the response received by flock/create API endpoint
+type FlockCreateResponse struct {
+	FlockID string `json:"flock_id,omitempty"`
+	Result  string `json:"result,omitempty"`
+	Message string `json:"message,omitempty"`
+}
