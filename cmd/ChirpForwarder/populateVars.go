@@ -5,7 +5,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/SherifEldeeb/canarytools"
+	canarytools "github.com/thinkst/go-canarytools"
 
 	log "github.com/sirupsen/logrus"
 )

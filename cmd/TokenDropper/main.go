@@ -11,7 +11,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/SherifEldeeb/canarytools"
+	canarytools "github.com/thinkst/go-canarytools"
 )
 
 var (

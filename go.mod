@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
+	github.com/SherifEldeeb/canarytools v0.0.0-20200706070735-1f9f3ebfdf87
 	github.com/Shopify/sarama v1.26.3
 	github.com/elastic/go-elasticsearch/v7 v7.6.0
 	github.com/go-logfmt/logfmt v0.5.0
