@@ -177,5 +177,4 @@ type FlockSummary struct {
 type FlockCreateResponse struct {
 	FlockID string `json:"flock_id,omitempty"`
 	Result  string `json:"result,omitempty"`
-	Message string `json:"message,omitempty"`
 }

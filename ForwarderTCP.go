@@ -9,7 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// TCPForwarder
+// TCPForwarder is a forwarder that pushes incidents to a TCP endpoint
 type TCPForwarder struct {
 	host      string
 	port      int

@@ -57,6 +57,53 @@ func (c Client) GetFlockIDFromName(flockname string) (flockid string, err error)
 	return
 }
 
+// FlockCreate creates a flock
+func (c Client) FlockCreate(flockname string) (flockid string, err error) {
+	fcr := FlockCreateResponse{}
+	u := &url.Values{}
+	u.Set("name", flockname)
+	err = c.decodeResponse("flock/create", "POST", u, &fcr)
+	if err != nil {
+		return
+	}
+	if fcr.Result != "success" {
+		err = fmt.Errorf("error creating flock")
+	}
+	flockid = fcr.FlockID
+	return
+}
+
+// FlockNameExists checks if a flock exists given its name
+func (c Client) FlockNameExists(flockname string) (exists bool, FlockID string, err error) {
+	fsr, err := c.GetFlocksSummary()
+	if err != nil {
+		return
+	}
+	for fid, flockSummary := range fsr.FlocksSummary {
+		if flockSummary.Name == flockname {
+			exists = true
+			FlockID = fid
+			return
+		}
+	}
+	return
+}
+
+// FlockIDExists checks if a flock exists given its ID
+func (c Client) FlockIDExists(flockid string) (exists bool, err error) {
+	fsr, err := c.GetFlocksSummary()
+	if err != nil {
+		return
+	}
+	for fid := range fsr.FlocksSummary {
+		if fid == flockid {
+			exists = true
+			return
+		}
+	}
+	return
+}
+
 // GetFlocksSummary returns summary for all flocks
 func (c Client) GetFlocksSummary() (flocksSummaryResponse FlocksSummaryResponse, err error) {
 	flocksSummaryResponse = FlocksSummaryResponse{}
@@ -123,19 +170,24 @@ func (c Client) DeleteCanarytoken(canarytoken string) (err error) {
 }
 
 // DropFileToken drops a file token
-func (c Client) DropFileToken(kind, memo, flock, filename string) (err error) {
+func (c Client) DropFileToken(kind, memo, filename, FlockID string, CreateFlockIfNotExists bool) (err error) {
 	c.l.WithFields(log.Fields{
-		"kind":     kind,
-		"memo":     memo,
-		"flock":    flock,
-		"filename": filename,
+		"kind":                   kind,
+		"memo":                   memo,
+		"flock_id":               FlockID,
+		"CreateFlockIfNotExists": CreateFlockIfNotExists,
+		"filename":               filename,
 	}).Debugf("Generating Token")
-	var tcr = TokenCreateResponse{}
 
+	var tcr = TokenCreateResponse{}
 	switch kind {
 	case "aws-id":
-		tcr, err = c.CreateTokenFromAPI(kind, memo, flock, nil)
+		tcr, err = c.CreateTokenFromAPI(kind, memo, FlockID, nil)
 		if err != nil {
+			return
+		}
+		if tcr.Result != "success" {
+			err = fmt.Errorf("failed to CreateTokenFromAPI")
 			return
 		}
 		var aswTemplate = `[default]
@@ -159,8 +211,12 @@ output=json
 			return fmt.Errorf("file exists: %s", filename)
 		}
 	case "doc-msword", "pdf-acrobat-reader", "msword-macro", "msexcel-macro":
-		tcr, err = c.CreateTokenFromAPI(kind, memo, flock, nil)
+		tcr, err = c.CreateTokenFromAPI(kind, memo, FlockID, nil)
 		if err != nil {
+			return
+		}
+		if tcr.Result != "success" {
+			err = fmt.Errorf("failed to CreateTokenFromAPI")
 			return
 		}
 		_, err = c.DownloadTokenFromAPI(tcr.Canarytoken.Canarytoken, filename)
@@ -171,12 +227,8 @@ output=json
 	return
 }
 
-func (c Client) dropAWSToken(tcr TokenCreateResponse, path string) (err error) {
-	return
-}
-
 // CreateTokenFromAPI uses the canarytoken/create API endpoint to create a token
-func (c Client) CreateTokenFromAPI(kind, memo, flock string, additionalParams *url.Values) (tokencreateresponse TokenCreateResponse, err error) {
+func (c Client) CreateTokenFromAPI(kind, memo, FlockID string, additionalParams *url.Values) (tokencreateresponse TokenCreateResponse, err error) {
 	tokencreateresponse = TokenCreateResponse{}
 	u := &url.Values{}
 	if additionalParams != nil {
@@ -184,8 +236,8 @@ func (c Client) CreateTokenFromAPI(kind, memo, flock string, additionalParams *u
 	}
 	u.Set("kind", kind)
 	u.Set("memo", memo)
-	if flock != "" {
-		u.Set("flock_id", flock)
+	if FlockID != "" {
+		u.Set("flock_id", FlockID)
 	}
 
 	switch kind {

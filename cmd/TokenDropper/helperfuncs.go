@@ -39,11 +39,15 @@ func GetRandomTokenName(kind string) (name string, err error) {
 
 // CreateMemo creates a meaningful memo to be included during Canarytoken creation
 // value is logfmt encoded for easier processing
-func CreateMemo(filename string) (memo string, err error) {
+func CreateMemo(filename, customMemo string) (memo string, err error) {
 	keyVals := []interface{}{
 		"Generator", "TokenDropper",
 	}
 
+	// custom reminders?
+	if customMemo != "" {
+		keyVals = append(keyVals, "Memo", customMemo)
+	}
 	// Add time
 	// keyVals = append(keyVals, "Timestamp", time.Now().UTC().Format(time.RFC3339))
 

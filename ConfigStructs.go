@@ -32,6 +32,7 @@ type GeneralTokenDropperConfig struct {
 	FlockName              string   // Name of the flock
 	FlockID                string   // Flock ID
 	CreateFlockIfNotExists bool     // should we create the flock if it didn't exist?
+	CustomMemo             string   // custom memo to be added to the default one
 }
 
 // ChirpForwarderConfig contains configs for the forwarder

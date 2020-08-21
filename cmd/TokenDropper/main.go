@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
@@ -46,41 +45,38 @@ func main() {
 	case "trace":
 		l.SetLevel(log.TraceLevel)
 	default:
-		l.Warn("unsupported log level, or none specified; will set to 'info', ")
+		l.Warn("unsupported log level, or none specified; will set to 'info'")
 		l.SetLevel(log.InfoLevel)
 	}
 
 	// start
-	p, err := os.Executable()
-	if err != nil {
-		l.Fatal("couldn't get current directory")
-	}
-	l.Info("running from:", p)
-
-	d := filepath.Dir(p)  // directory
-	e := filepath.Base(p) // exe name
-	// get count from exe name?
-	countFromName, err := strconv.Atoi(e)
-	if err == nil {
-		if countFromName > 15 {
-			l.Warn("count from name > 15 ... will set to 15")
-			countFromName = 15
+	// dpending on the execution environment, sometimes "./" does not get evaluated as "same dir as the exe file"
+	// so, till I figure out a better way, we do the following.
+	if cfg.DropWhere == "./" {
+		p, err := os.Executable()
+		if err != nil {
+			l.Fatal("couldn't get current directory")
 		}
-		cfg.FilesCount = countFromName
+		cfg.DropWhere = filepath.Dir(p) // full path to executable
+	}
+	err = os.Chdir(cfg.DropWhere)
+	if err != nil {
+		l.WithField("err", err).Fatal("couldn't change directory")
 	}
 
-	err = os.Chdir(d)
-	if err != nil {
-		l.Fatal("couldn't change directory")
+	l.WithField("where", cfg.DropWhere).Info("Dropping Canarytokens")
+
+	if cfg.FilesCount > 30 {
+		l.Warn("File count is > 30 ... will set to 30")
 	}
 
 	// try to populte domain hash and API key
 	// either from file or params...
-	// first, we don't got api key and domain through flags? let's try to load them from ile
+	// first, we didn't get api key and domain through flags? let's try to load them from file
 	if cfg.ImConsoleAPIKey == "" && cfg.ImConsoleAPIDomain == "" {
 		// if we don't have them, we try to load it from same drectory
 		if cfg.ImConsoleTokenFile == "" { // if not
-			cfg.ImConsoleTokenFile = filepath.Join(d, "canarytools.config")
+			cfg.ImConsoleTokenFile = filepath.Join(cfg.DropWhere, "canarytools.config")
 		}
 		// do we have canarytools.config in same path? get data from it...
 		if _, err := os.Stat(cfg.ImConsoleTokenFile); os.IsNotExist(err) {
@@ -97,26 +93,60 @@ func main() {
 	}
 	// by now, we should have both key and domain
 
-	// filename is number of files?
+	// create new canary API client
 	c, err := canarytools.NewClient(cfg.ImConsoleAPIDomain, cfg.ImConsoleAPIKey, l)
 	if err != nil {
-		l.Fatal(err)
+		l.WithField("err", err).Fatal("error creating canary client")
 	}
 
-	fileCount := cfg.FilesCount
-	log.Info(fileCount)
-	for i := 0; i < fileCount; i++ {
+	// flock related stuff
+	// ultimate goal to populate both FlockName & FlockID
+	// if provided name exists, retrieve the FlockID,
+	// if it doesn't, and CreateFlockIfNotExist id true
+	// create it, and set the FlockID
+	if cfg.FlockName == "" { // if no flock name provided, use the default one
+		cfg.FlockID = "flock:default"
+		cfg.FlockName = "Default Flock"
+	} else { // we have been given a flockname...
+		// does it exist?
+		exists, fid, err := c.FlockNameExists(cfg.FlockName)
+		if err != nil {
+			l.WithField("err", err).Fatal("error checking if flock exists")
+		}
+		if exists {
+			cfg.FlockID = fid
+		} else {
+			l.WithField("flockname", cfg.FlockName).Info("flock does not exist")
+			if cfg.CreateFlockIfNotExists {
+				l.WithField("flockname", cfg.FlockName).Info("creating flock")
+				cfg.FlockID, err = c.FlockCreate(cfg.FlockName)
+				if err != nil {
+					l.WithField("err", err).Fatal("error creating flock")
+				}
+			} else {
+				l.WithField("flockname", cfg.FlockName).Fatal("flock doesn't exist, and you told me not to create it")
+			}
+		}
+	}
+	// we now should have both FlockName & FlockID
+	// let's get this over with...
+	log.WithFields(log.Fields{
+		"kind":  cfg.KindsStr,
+		"count": cfg.FilesCount,
+		"flock": cfg.FlockName,
+	}).Info("dropping tokens..")
+	for i := 0; i < cfg.FilesCount; i++ {
 		kind := pick(cfg.Kinds)
-		n, err := GetRandomTokenName(kind)
+		filename, err := GetRandomTokenName(kind)
 		if err != nil {
 			l.Error(err)
 			continue
 		}
 		l.WithFields(log.Fields{
 			"kind":     kind,
-			"filename": n,
+			"filename": filename,
 		}).Info("Generating Token")
-		memo, err := CreateMemo(n)
+		memo, err := CreateMemo(filename, cfg.CustomMemo)
 		if err != nil {
 			l.Error(err)
 			continue
@@ -124,17 +154,23 @@ func main() {
 
 		l.WithFields(log.Fields{
 			"kind":     kind,
-			"filename": n,
+			"filename": filename,
 			"memo":     memo,
 		}).Debug("Generating Token")
 		// drop
-		n = filepath.Join(cfg.DropWhere, n)
-		err = c.DropFileToken(kind, memo, "", n)
+		filename = filepath.Join(cfg.DropWhere, filename)
+		err = c.DropFileToken(kind, memo, filename, cfg.FlockID, cfg.CreateFlockIfNotExists)
 		if err != nil {
 			l.Error(err)
 			continue
 		}
-		rtime := GetRandomDate(2)
-		os.Chtimes(n, rtime, rtime)
+		rtime := GetRandomDate(cfg.RandYearsBack)
+		err = os.Chtimes(filename, rtime, rtime)
+		if err != nil {
+			l.WithFields(log.Fields{
+				"filename": filename,
+				"err":      err,
+			}).Error("Error changing file timestamps")
+		}
 	}
 }
