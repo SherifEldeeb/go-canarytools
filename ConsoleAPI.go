@@ -117,7 +117,7 @@ func (c Client) GetFlocksSummary() (flocksSummaryResponse FlocksSummaryResponse,
 	return
 }
 
-// GetFlockSummary checks if flock exists
+// GetFlockSummary returns summary for a single flock
 func (c Client) GetFlockSummary(flockid string) (flocksummaryresponse FlockSummaryResponse, err error) {
 	flocksummaryresponse = FlockSummaryResponse{}
 	u := &url.Values{}
@@ -136,7 +136,7 @@ func (c Client) GetFlockSummary(flockid string) (flocksummaryresponse FlockSumma
 func NewClient(domain, apikey string, l *log.Logger) (c *Client, err error) {
 	c = &Client{}
 	c.l = l
-	c.httpclient = &http.Client{Timeout: 5 * time.Second} // TODO: provide ability to configure
+	c.httpclient = &http.Client{Timeout: 10 * time.Second}
 	c.domain = domain
 	c.apikey = apikey
 	c.baseURL, err = url.Parse(fmt.Sprintf("https://%s.canary.tools/api/v1/", domain))
@@ -437,6 +437,21 @@ func (c Client) GetAllIncidents(since time.Time) (incidents []Incident, err erro
 	return c.getIncidents("all", since)
 }
 
+// ThenWhatIncidents performs "ThenWhat" action on incidents
+func (c *Client) ThenWhatIncidents(thenWhat string, incidents <-chan []byte) {
+	switch thenWhat {
+	case "ack":
+		c.AckIncidents(incidents)
+	case "delete":
+		c.DeleteIncidents(incidents)
+	case "nothing":
+		for range incidents {
+		}
+	default:
+		c.l.WithField("ThenWhat", thenWhat).Fatal("unsupported ThenWhat")
+	}
+}
+
 // AckIncidents consumes incidents from an incidents chan,
 // and ACKs them if they haven't been ACK'd already
 func (c *Client) AckIncidents(ackedIncident <-chan []byte) {
@@ -488,6 +503,54 @@ func (c *Client) AckIncident(incident string) (err error) {
 		"stage":    "ack",
 		"incident": incident,
 	}).Info("Client successfully Ack'd Incident")
+
+	return
+}
+
+// DeleteIncidents consumes incidents from an incidents chan,
+// and deletes them
+func (c *Client) DeleteIncidents(incidents <-chan []byte) {
+	for v := range incidents {
+		var incident Incident
+		err := json.Unmarshal(v, &incident)
+		if err != nil {
+			c.l.WithFields(log.Fields{
+				"source": "ConsoleClient",
+				"stage":  "delete",
+				"err":    err,
+			}).Error("Client error delete Incident")
+			continue
+		}
+		err = c.AckIncident(incident.ID)
+	}
+}
+
+// DeleteIncident deletes incident
+func (c *Client) DeleteIncident(incident string) (err error) {
+	c.l.WithFields(log.Fields{
+		"source":   "ConsoleClient",
+		"stage":    "delete",
+		"incident": incident,
+	}).Debug("Client Delete Incident")
+
+	uv := &url.Values{}
+	uv.Add("incident", incident)
+
+	br := &BasicResponse{}
+	err = c.decodeResponse("incident/delete", "POST", uv, br)
+	if err != nil {
+		c.l.WithFields(log.Fields{
+			"source": "ConsoleClient",
+			"stage":  "delete",
+			"err":    err,
+		}).Error("Client error delete Incident")
+		return
+	}
+	c.l.WithFields(log.Fields{
+		"source":   "ConsoleClient",
+		"stage":    "delete",
+		"incident": incident,
+	}).Info("Client successfully delete Incident")
 
 	return
 }

@@ -25,8 +25,8 @@ type Forwarder interface {
 	// TODO: add stats
 }
 
-// IncidentAcker interface acks incidents
-type IncidentAcker interface {
-	AckIncidents(ackedIncident <-chan []byte)
+// IncidentThenWhatter interface performs "ThenWhat" action on incidents
+type IncidentThenWhatter interface {
+	ThenWhatIncidents(thenWhat string, incidents <-chan []byte)
 	// TODO: add stats
 }

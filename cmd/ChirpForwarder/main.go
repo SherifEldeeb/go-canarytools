@@ -4,8 +4,8 @@ import (
 	"flag"
 	"fmt"
 
-	canarytools "github.com/thinkst/go-canarytools"
 	log "github.com/sirupsen/logrus"
+	canarytools "github.com/thinkst/go-canarytools"
 )
 
 var (
