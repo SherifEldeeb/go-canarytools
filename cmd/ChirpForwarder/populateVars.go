@@ -10,7 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func popultaeVarsFromEnv(cfg *canarytools.ChirpForwarderConfig) {
+func populateVarsFromEnv(cfg *canarytools.ChirpForwarderConfig) {
 	// Artificial Intelligence vars parser!
 	// lots of if statements ahead ... :)
 

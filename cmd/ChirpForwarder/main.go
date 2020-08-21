@@ -16,7 +16,7 @@ var (
 
 func init() {
 	populateVarsFromFlags(&cfg) // first: set vars with flags
-	popultaeVarsFromEnv(&cfg)   // then:  populate remaining vars from environment
+	populateVarsFromEnv(&cfg)   // then:  populate remaining vars from environment
 	// explicit command line flags overrides environment variables; values from
 	// environment variables are only set if not already set by flags
 }
