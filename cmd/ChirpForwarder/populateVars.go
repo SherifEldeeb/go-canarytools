@@ -143,9 +143,9 @@ func populateVarsFromFlags(cfg *canarytools.ChirpForwarderConfig) {
 	flag.StringVar(&cfg.Loglevel, "loglevel", "", "set loglevel, can be one of ('info', 'warning' or 'debug')")
 	flag.StringVar(&cfg.ThenWhat, "then", "", "what to do after getting an incident? can be one of ('nothing', or 'ack')")
 	flag.StringVar(&cfg.SinceWhenString, "since", "", `get events newer than this time.
-		format has to be like this: 'yyyy-MM-dd HH:mm:ss'
-		if nothing provided, it will check value from '.canary.lastcheck' file,
-		if .canary.lastcheck file does not exist, it will default to events from last 7 days`)
+format has to be like this: 'yyyy-MM-dd HH:mm:ss'
+if nothing provided, it will check value from '.canary.lastcheck' file,
+if .canary.lastcheck file does not exist, it will default to events from last 7 days`)
 	flag.StringVar(&cfg.WhichIncidents, "which", "", "which incidents to fetch? can be one of ('all', or 'unacknowledged')")
 	flag.StringVar(&cfg.IncidentFilter, "filter", "", "filter to apply to incident ('none', or 'dropevents')")
 	flag.StringVar(&cfg.FlockName, "flock", "", "Flock name to process incidents for 'if left empty, all incidents will be processed'")
