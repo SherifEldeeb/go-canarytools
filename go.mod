@@ -1,4 +1,4 @@
-module github.com/SherifEldeeb/canarytools
+module github.com/thinkst/go-canarytools
 
 go 1.14
 
