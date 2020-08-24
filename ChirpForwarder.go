@@ -109,7 +109,7 @@ func (cf *ChirpForwarder) setFeeder() {
 			"cf.cfg.ImConsoleAPIKey": (cf.cfg.ImConsoleAPIKey)[0:4] + "..." + (cf.cfg.ImConsoleAPIKey)[len(cf.cfg.ImConsoleAPIKey)-4:len(cf.cfg.ImConsoleAPIKey)],
 		}).Info("ChirpForwarder Configs")
 
-		// building a new clint, testing connection...
+		// building a new client, testing connection...
 		cf.l.Debug("building new client and pinging console")
 		c, err := NewConsoleAPIFeeder(cf.cfg.ImConsoleAPIDomain, cf.cfg.ImConsoleAPIKey, cf.cfg.ThenWhat, cf.cfg.SinceWhenString, cf.cfg.WhichIncidents, cf.cfg.FlockName, cf.cfg.ImConsoleAPIFetchInterval, cf.l)
 		if err != nil {

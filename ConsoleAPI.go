@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -323,7 +324,7 @@ func (c Client) decodeResponse(endpoint, verb string, params *url.Values, target
 	}
 
 	switch verb {
-	case "GET":
+	case http.MethodGet:
 		fullURL, err = c.api(endpoint, params)
 		if err != nil {
 			return
@@ -333,10 +334,16 @@ func (c Client) decodeResponse(endpoint, verb string, params *url.Values, target
 			"HTTPverb": verb,
 		}).Debug("hitting API")
 		resp, err = c.httpclient.Get(fullURL.String())
-	case "POST":
+	case http.MethodPost:
 		resp, err = c.httpclient.PostForm(fullURL.String(), *params)
-	case "DELETE":
-		req, _ := http.NewRequest("DELETE", fullURL.String(), nil)
+	case http.MethodDelete:
+		var req = &http.Request{}
+		if params != nil {
+			req, _ = http.NewRequest(http.MethodDelete, fullURL.String(), strings.NewReader(params.Encode()))
+			req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+		} else {
+			req, _ = http.NewRequest(http.MethodDelete, fullURL.String(), nil)
+		}
 		resp, err = c.httpclient.Do(req)
 	}
 	if err != nil {
@@ -472,6 +479,9 @@ func (c *Client) AckIncidents(ackedIncident <-chan []byte) {
 			// ack, only if it hasn't been ack'd already
 			if a == "False" && incident.ThenWhat == "ack" {
 				err = c.AckIncident(incident.ID)
+				if err != nil {
+					c.l.WithField("err", err).Error("error acking incident")
+				}
 			}
 		}
 	}
@@ -521,7 +531,10 @@ func (c *Client) DeleteIncidents(incidents <-chan []byte) {
 			}).Error("Client error delete Incident")
 			continue
 		}
-		err = c.AckIncident(incident.ID)
+		err = c.DeleteIncident(incident.ID)
+		if err != nil {
+			c.l.WithField("err", err).Error("error deleting incident")
+		}
 	}
 }
 
@@ -537,7 +550,7 @@ func (c *Client) DeleteIncident(incident string) (err error) {
 	uv.Add("incident", incident)
 
 	br := &BasicResponse{}
-	err = c.decodeResponse("incident/delete", "POST", uv, br)
+	err = c.decodeResponse("incident/delete", http.MethodDelete, uv, br)
 	if err != nil {
 		c.l.WithFields(log.Fields{
 			"source": "ConsoleClient",
@@ -545,6 +558,9 @@ func (c *Client) DeleteIncident(incident string) (err error) {
 			"err":    err,
 		}).Error("Client error delete Incident")
 		return
+	}
+	if br.Result != "success" {
+		return fmt.Errorf("error deleting incident:%s: %s", incident, br.Message)
 	}
 	c.l.WithFields(log.Fields{
 		"source":   "ConsoleClient",
