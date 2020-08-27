@@ -9,4 +9,4 @@ SSL/TLS auth is supported.
 
 
 # SSL/TLS Support
-To send alerts encrypted using SSL/TLS, you have to specify the parameters using the [SSL/TLS Settings](SSL-TLS-Settings)
+To send alerts encrypted using SSL/TLS, you have to specify the parameters using the [SSL/TLS Settings](SSL-TLS-Settings.md)

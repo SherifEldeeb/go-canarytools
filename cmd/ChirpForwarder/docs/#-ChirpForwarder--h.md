@@ -1,24 +1,23 @@
 ```~$ ChirpForwarder -h```
 ```
-+++++++++++++++++++++++++++.ooo.`  -/-`          -/-`
-++++++++++++++++++++++++++.ooooo` -+++:.        -+++:.
-+++++++++++++++++++++++++++.ooo.` -+++++/:.     -+++++/:`
-++++++++++++++/:---:/+++++/+++++` `-/++++++/-`  `-/++++++/-`
-++++++++++++/-        .---:+++++`    `-/++++++:.   `-/++++++:.
-+++++++++++:`          .:/++++++`       .:++++++/:`   .:++++++/-`
-++++++++++/           -+++++++++`        `-/++++++/-`  `-/++++++/-`
++++++++++++++++++++++++++++.ooo.`  -/-`          -/-`                  
+++++++++++++++++++++++++++.ooooo` -+++:.        -+++:.                
++++++++++++++++++++++++++++.ooo.` -+++++/:.     -+++++/:`             
+++++++++++++++/:---:/+++++/+++++` `-/++++++/-`  `-/++++++/-`          
+++++++++++++/-        .---:+++++`    `-/++++++:.   `-/++++++:.        
++++++++++++:`          .:/++++++`       .:++++++/:`   .:++++++/-`     
+++++++++++/           -+++++++++`        `-/++++++/-`  `-/++++++/-`  
 +++++++++/`          `++++++++++`            `-/++++++:.   `-/++++++:.
 +++++++/.            .++++++++++`            `-/+++++/:.   `-/+++++/:.
-+++++/.              `++++++++++`        `-/++++++/-`  `-/++++++/-`
-+++/-                 /+++++++++`       .:++++++/-`   .:++++++/-`
-++/`                  /+++++++++`    `-/++++++:.   `-/++++++:.
-:.                   :++++++++++` `-/++++++/-`  `-/++++++/-`
-                   `:+++++++++++` -+++++/:`     -+++++/:`
-                  -/++++++++++++` -+++:.        -+++:.
-               `-/++++++++++++++`  -/-`          -/-`
++++++/.              `++++++++++`        `-/++++++/-`  `-/++++++/-`  
++++/-                 /+++++++++`       .:++++++/-`   .:++++++/-`     
+++/`                  /+++++++++`    `-/++++++:.   `-/++++++:.        
+:.                   :++++++++++` `-/++++++/-`  `-/++++++/-`          
+                   `:+++++++++++` -+++++/:`     -+++++/:`             
+                  -/++++++++++++` -+++:.        -+++:.                
+               `-/++++++++++++++`  -/-`          -/-`                  
 
-INFO[0000] starting canary ChirpForwarder
-Usage of ChirpForwarder:
+Usage of ./ChirpForwarder:
   -apikey string
         API Key
   -compress
@@ -43,6 +42,8 @@ Usage of ChirpForwarder:
         [OUT|FILE] file name
   -filter string
         filter to apply to incident ('none', or 'dropevents')
+  -flock string
+        Flock name to process incidents for 'if left empty, all incidents will be processed'
   -host string
         [OUT|TCP] host
   -insecure
@@ -53,7 +54,7 @@ Usage of ChirpForwarder:
         [OUT|KAFKA] kafka brokers "broker:port"
                         for multiple brokers, separate using semicolon "broker1:9092;broker2:9092"
   -kafkatopic string
-        [OUT|KAFKA] elasticsearch user 'basic auth'
+        [OUT|KAFKA] kafka topic 'defaults to canarychirps if not set'
   -loglevel string
         set loglevel, can be one of ('info', 'warning' or 'debug')
   -maxage int
@@ -65,12 +66,12 @@ Usage of ChirpForwarder:
   -output string
         output module ('tcp', 'file', 'elastic' or 'kafka')
   -port int
-        [OUT|TCP] TCP/UDP port
+        [OUT|TCP] TCP port
   -since string
         get events newer than this time.
-                        format has to be like this: 'yyyy-MM-dd HH:mm:ss'
-                        if nothing provided, it will check value from '.canary.lastcheck' file,
-                        if .canary.lastcheck file does not exist, it will default to events from last 7 days
+        format has to be like this: 'yyyy-MM-dd HH:mm:ss'
+        if nothing provided, it will check value from '.canary.lastcheck' file,
+        if .canary.lastcheck file does not exist, it will default to events from last 7 days
   -ssl
         [SSL/TLS CLIENT] are we using SSL/TLS? setting this to true enables encrypted clinet configs
   -sslclientca string
@@ -80,8 +81,9 @@ Usage of ChirpForwarder:
   -sslclientkey string
         [SSL/TLS CLIENT] path to client SSL/TLS Key  file
   -then string
-        what to do after getting an incident? can be one of ('nothing', or 'ack')
+        what to do after getting an incident? can be one of ('nothing', 'ack' or 'delete') (default "nothing")
   -tokenfile string
         the token file 'canarytools.config' which contains api token and the domain
   -which string
-        which incidents to fetch? can be one of ('all', or 'unacknowledged')```
+        which incidents to fetch? can be one of ('all', or 'unacknowledged')
+```

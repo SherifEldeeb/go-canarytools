@@ -13,4 +13,4 @@ No auth, basic auth & SSL/TLS are all supported.
 |`-escloudid`|string|CANARY_ESCLOUDID|endpoint for the Elastic Cloud Service 'https://elastic.co/cloud'|
 
 # SSL/TLS Support
-To send alerts encrypted using SSL/TLS, you have to specify the parameters using the [SSL/TLS Settings](SSL-TLS-Settings)
+To send alerts encrypted using SSL/TLS, you have to specify the parameters using the [SSL/TLS Settings](SSL-TLS-Settings.md)

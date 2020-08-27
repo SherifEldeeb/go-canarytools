@@ -17,5 +17,5 @@ Instead of setting the `apikey` and `domain` using command line flags, or throug
 - simply place it in your user's home directory and ChirpForwarder will look for it there.  
 ***  
 To get the token file, click on "Download Token File":  
-![Get canary API token file](https://github.com/SherifEldeeb/ChirpForwarder/raw/master/assets/images/01-GetAPI.png)
+![Get canary API token file](assets/images/01-GetAPI.png)
 

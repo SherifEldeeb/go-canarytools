@@ -8,4 +8,4 @@ Events/Alerts will be separated by newline `\n`.
 
 
 # SSL/TLS Support
-To send alerts over tcp encrypted using SSL/TLS, you have to specify the parameters using the [SSL/TLS Settings](SSL-TLS-Settings)
+To send alerts over tcp encrypted using SSL/TLS, you have to specify the parameters using the [SSL/TLS Settings](SSL-TLS-Settings.md)

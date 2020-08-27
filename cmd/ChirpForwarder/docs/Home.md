@@ -8,9 +8,9 @@ It's a single binary that has no dependencies, runs on windows, linux, macOS, an
 Even though there are many ways to receive alerts from the canary console, canary owners who would like to integrate alerts with local/on-prem SIEM solutions had to either do some custom development (to integrate with the console API), and/or expose a service listener to the internet (syslog or webhook).  
 This tool aims to lower the barrier for canary owners who have a need to integrate canary alerts into their SIEM/SOAR solutions, or are looking for an easy way to archive alerts & incidents in a standard format, for regulatory & compliance purposes, without the need for custom development, or the need to open a listener to the internet.
 ## Notable Features
-- Fetches all incidents, or only unacknowledged ones, with time filtering (e.g. only get unacknowledged incidents since X)
+- Fetches all incidents, or only unacknowledged ones, with time filtering (e.g. only get unacknowledged incidents since X), and flock support.
 - Automatically fetches incidents on configurable intervals, with "remember last time checked" on restart.
-- Can mark fetched incidents as "acknolwedged" once successfully forwarded to destination.
+- Can mark fetched incidents as "acknolwedged", or delete them once successfully forwarded to destination.
 - Supports the following outputs:
   - **Flat file**: stores incidents as JSON-lines in flat files, with built-in automatic log rotation and retention on configurable settings.
   - **TCP**: forward events to a TCP listener (very popular with SIEM solutions); incidents are JSON encoded and `\n` separated.
