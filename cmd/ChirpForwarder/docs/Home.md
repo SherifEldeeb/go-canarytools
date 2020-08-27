@@ -1,7 +1,7 @@
 # ChirpForwarder
-![ChirpForwarder Logo](docs/assets/images/ChirpForwarder.png)
+![ChirpForwarder Logo](https://github.com/SherifEldeeb/ChirpForwarder/raw/master/assets/images/ChirpForwarder.png)
 ## What?
-ChirpForwarder is a tool that pulls alerts and incidents from thinkst canary console "https://canary.tools/", then forwards them to local destinations (e.g. SIEM/SOAR solutions) for further processing/indexing/archival/etc.  
+ChirpForwarder is a tool that pulls alerts and incidents from a thinkst canary console "https://canary.tools/", then forwards them to local destinations (e.g. SIEM/SOAR solutions) for further processing/indexing/archival/etc.  
 It's a single binary that has no dependencies, runs on windows, linux, macOS, and it's also available as a docker image.
 
 ## Why?
@@ -22,6 +22,4 @@ This tool aims to lower the barrier for canary owners who have a need to integra
     - "`-output kafka`" is same as "`CANARY_OUTPUT=kafka`"
     - "`-esuser elastic`" is same as "`CANARY_ESUSER=elastic`"
   - API key, and the canary domain can also be "additonally" specified using the token file downloaded from the console, either through `-tokenfile`, or simply placing it in the user's home directory, and ChirpForwarder will look for that file there on its own.
-- docker support with a sample "docker-compose" file; set environment variables, `docker-compose up` and off you go; to learn more about how to run it using docker, check the [Docker Support section in the Wiki](https://github.com/SherifEldeeb/ChirpForwarder/wiki/Docker-Support).
-***
-Head over to the [Wiki](https://github.com/SherifEldeeb/ChirpForwarder/wiki) to learn more.
+- docker support with a sample "docker-compose" file; set environment variables, `docker-compose up` and off you go.
