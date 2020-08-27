@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 
-	"github.com/SherifEldeeb/canarytools"
+	canarytools "github.com/thinkst/go-canarytools"
 )
 
 func populateVarsFromFlags(cfg *canarytools.TokenDropperConfig) {
