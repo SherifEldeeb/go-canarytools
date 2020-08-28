@@ -2,6 +2,7 @@
 ![ChirpForwarder Logo](docs/assets/images/ChirpForwarder.png)
 ## What?
 ChirpForwarder is a tool that pulls alerts and incidents from a thinkst canary console "https://canary.tools/", then forwards them to local destinations (e.g. SIEM/SOAR solutions) for further processing/indexing/archival/etc.  
+
 It's a single binary that has no dependencies, runs on windows, linux, macOS, and it's also available as a docker image.
 
 ## Why?
