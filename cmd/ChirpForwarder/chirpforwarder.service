@@ -1,0 +1,14 @@
+[Unit]
+Description=ChirpForwarder
+After=network-online.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+# ExecStart=/opt/canary/ChirpForwarder -output elastic -apikey API_KEY_FROM_CONSOLE -domain YOUR_CANARY_DOMAIN -which all -eshost http://127.0.0.1:9200
+ExecStart=/opt/canary/ChirpForwarder -output elastic -tokenfile canarytools.config -which all -eshost http://127.0.0.1:9200
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
