@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -117,7 +118,7 @@ func (c Client) GetFlocksSummary() (flocksSummaryResponse FlocksSummaryResponse,
 	return
 }
 
-// GetFlockSummary checks if flock exists
+// GetFlockSummary returns summary for a single flock
 func (c Client) GetFlockSummary(flockid string) (flocksummaryresponse FlockSummaryResponse, err error) {
 	flocksummaryresponse = FlockSummaryResponse{}
 	u := &url.Values{}
@@ -136,7 +137,7 @@ func (c Client) GetFlockSummary(flockid string) (flocksummaryresponse FlockSumma
 func NewClient(domain, apikey string, l *log.Logger) (c *Client, err error) {
 	c = &Client{}
 	c.l = l
-	c.httpclient = &http.Client{Timeout: 5 * time.Second} // TODO: provide ability to configure
+	c.httpclient = &http.Client{Timeout: 10 * time.Second}
 	c.domain = domain
 	c.apikey = apikey
 	c.baseURL, err = url.Parse(fmt.Sprintf("https://%s.canary.tools/api/v1/", domain))
@@ -323,7 +324,7 @@ func (c Client) decodeResponse(endpoint, verb string, params *url.Values, target
 	}
 
 	switch verb {
-	case "GET":
+	case http.MethodGet:
 		fullURL, err = c.api(endpoint, params)
 		if err != nil {
 			return
@@ -333,10 +334,16 @@ func (c Client) decodeResponse(endpoint, verb string, params *url.Values, target
 			"HTTPverb": verb,
 		}).Debug("hitting API")
 		resp, err = c.httpclient.Get(fullURL.String())
-	case "POST":
+	case http.MethodPost:
 		resp, err = c.httpclient.PostForm(fullURL.String(), *params)
-	case "DELETE":
-		req, _ := http.NewRequest("DELETE", fullURL.String(), nil)
+	case http.MethodDelete:
+		var req = &http.Request{}
+		if params != nil {
+			req, _ = http.NewRequest(http.MethodDelete, fullURL.String(), strings.NewReader(params.Encode()))
+			req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+		} else {
+			req, _ = http.NewRequest(http.MethodDelete, fullURL.String(), nil)
+		}
 		resp, err = c.httpclient.Do(req)
 	}
 	if err != nil {
@@ -437,6 +444,21 @@ func (c Client) GetAllIncidents(since time.Time) (incidents []Incident, err erro
 	return c.getIncidents("all", since)
 }
 
+// ThenWhatIncidents performs "ThenWhat" action on incidents
+func (c *Client) ThenWhatIncidents(thenWhat string, incidents <-chan []byte) {
+	switch thenWhat {
+	case "ack":
+		c.AckIncidents(incidents)
+	case "delete":
+		c.DeleteIncidents(incidents)
+	case "nothing":
+		for range incidents {
+		}
+	default:
+		c.l.WithField("ThenWhat", thenWhat).Fatal("unsupported ThenWhat")
+	}
+}
+
 // AckIncidents consumes incidents from an incidents chan,
 // and ACKs them if they haven't been ACK'd already
 func (c *Client) AckIncidents(ackedIncident <-chan []byte) {
@@ -457,6 +479,9 @@ func (c *Client) AckIncidents(ackedIncident <-chan []byte) {
 			// ack, only if it hasn't been ack'd already
 			if a == "False" && incident.ThenWhat == "ack" {
 				err = c.AckIncident(incident.ID)
+				if err != nil {
+					c.l.WithField("err", err).Error("error acking incident")
+				}
 			}
 		}
 	}
@@ -488,6 +513,60 @@ func (c *Client) AckIncident(incident string) (err error) {
 		"stage":    "ack",
 		"incident": incident,
 	}).Info("Client successfully Ack'd Incident")
+
+	return
+}
+
+// DeleteIncidents consumes incidents from an incidents chan,
+// and deletes them
+func (c *Client) DeleteIncidents(incidents <-chan []byte) {
+	for v := range incidents {
+		var incident Incident
+		err := json.Unmarshal(v, &incident)
+		if err != nil {
+			c.l.WithFields(log.Fields{
+				"source": "ConsoleClient",
+				"stage":  "delete",
+				"err":    err,
+			}).Error("Client error delete Incident")
+			continue
+		}
+		err = c.DeleteIncident(incident.ID)
+		if err != nil {
+			c.l.WithField("err", err).Error("error deleting incident")
+		}
+	}
+}
+
+// DeleteIncident deletes incident
+func (c *Client) DeleteIncident(incident string) (err error) {
+	c.l.WithFields(log.Fields{
+		"source":   "ConsoleClient",
+		"stage":    "delete",
+		"incident": incident,
+	}).Debug("Client Delete Incident")
+
+	uv := &url.Values{}
+	uv.Add("incident", incident)
+
+	br := &BasicResponse{}
+	err = c.decodeResponse("incident/delete", http.MethodDelete, uv, br)
+	if err != nil {
+		c.l.WithFields(log.Fields{
+			"source": "ConsoleClient",
+			"stage":  "delete",
+			"err":    err,
+		}).Error("Client error delete Incident")
+		return
+	}
+	if br.Result != "success" {
+		return fmt.Errorf("error deleting incident:%s: %s", incident, br.Message)
+	}
+	c.l.WithFields(log.Fields{
+		"source":   "ConsoleClient",
+		"stage":    "delete",
+		"incident": incident,
+	}).Info("Client successfully delete Incident")
 
 	return
 }

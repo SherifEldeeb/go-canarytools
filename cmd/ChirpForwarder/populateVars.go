@@ -141,7 +141,7 @@ func populateVarsFromFlags(cfg *canarytools.ChirpForwarderConfig) {
 	flag.StringVar(&cfg.FeederModule, "feeder", "consoleapi", "input module")
 	flag.StringVar(&cfg.ForwarderModule, "output", "", "output module ('tcp', 'file', 'elastic' or 'kafka')")
 	flag.StringVar(&cfg.Loglevel, "loglevel", "", "set loglevel, can be one of ('info', 'warning' or 'debug')")
-	flag.StringVar(&cfg.ThenWhat, "then", "", "what to do after getting an incident? can be one of ('nothing', or 'ack')")
+	flag.StringVar(&cfg.ThenWhat, "then", "nothing", "what to do after getting an incident? can be one of ('nothing', 'ack' or 'delete')")
 	flag.StringVar(&cfg.SinceWhenString, "since", "", `get events newer than this time.
 format has to be like this: 'yyyy-MM-dd HH:mm:ss'
 if nothing provided, it will check value from '.canary.lastcheck' file,
@@ -214,9 +214,9 @@ func setDefaultVars(cfg *canarytools.ChirpForwarderConfig, l *log.Logger) {
 	switch cfg.ThenWhat {
 	case "nothing":
 	case "ack":
+	case "delete":
 	default:
-		l.Warn("'then' is not valid, or not specified; will set to 'nothing'")
-		cfg.ThenWhat = "nothing"
+		l.Fatal("'then' is not valid, or not specified; will set to 'nothing'")
 	}
 
 	switch cfg.WhichIncidents {

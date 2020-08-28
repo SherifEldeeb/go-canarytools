@@ -25,14 +25,14 @@ type ChirpForwarder struct {
 	incidentsChan         chan Incident
 	filteredIncidentsChan chan Incident
 	outChan               chan []byte
-	incidentAckerChan     chan []byte
+	incidentThenWhatChan  chan []byte
 
 	// interfaces
-	feeder        Feeder
-	incidentAcker IncidentAcker
-	filter        Filter
-	mapper        Mapper
-	forwarder     Forwarder
+	feeder              Feeder
+	incidentThenWhatter IncidentThenWhatter
+	filter              Filter
+	mapper              Mapper
+	forwarder           Forwarder
 
 	// logger
 	l *log.Logger
@@ -48,7 +48,7 @@ func NewChirpForwarder(cfg ChirpForwarderConfig, l *log.Logger) (cf *ChirpForwar
 	cf.incidentsChan = make(chan Incident)
 	cf.filteredIncidentsChan = make(chan Incident)
 	cf.outChan = make(chan []byte)
-	cf.incidentAckerChan = make(chan []byte)
+	cf.incidentThenWhatChan = make(chan []byte)
 
 	// set logger
 	cf.l = l
@@ -109,7 +109,7 @@ func (cf *ChirpForwarder) setFeeder() {
 			"cf.cfg.ImConsoleAPIKey": (cf.cfg.ImConsoleAPIKey)[0:4] + "..." + (cf.cfg.ImConsoleAPIKey)[len(cf.cfg.ImConsoleAPIKey)-4:len(cf.cfg.ImConsoleAPIKey)],
 		}).Info("ChirpForwarder Configs")
 
-		// building a new clint, testing connection...
+		// building a new client, testing connection...
 		cf.l.Debug("building new client and pinging console")
 		c, err := NewConsoleAPIFeeder(cf.cfg.ImConsoleAPIDomain, cf.cfg.ImConsoleAPIKey, cf.cfg.ThenWhat, cf.cfg.SinceWhenString, cf.cfg.WhichIncidents, cf.cfg.FlockName, cf.cfg.ImConsoleAPIFetchInterval, cf.l)
 		if err != nil {
@@ -119,7 +119,7 @@ func (cf *ChirpForwarder) setFeeder() {
 		}
 		cf.l.Debug("initial setup successful! we're good to go")
 		cf.feeder = c
-		cf.incidentAcker = c
+		cf.incidentThenWhatter = c
 	default:
 		cf.l.WithField("feeder", cf.cfg.FeederModule).Fatal("unsupported feeder module specified")
 	}
@@ -270,8 +270,8 @@ func (cf *ChirpForwarder) Run() {
 
 	// All good, let's roll...
 	go cf.feeder.Feed(cf.incidentsChan)
-	go cf.incidentAcker.AckIncidents(cf.incidentAckerChan)
+	go cf.incidentThenWhatter.ThenWhatIncidents(cf.cfg.ThenWhat, cf.incidentThenWhatChan)
 	go cf.filter.Filter(cf.incidentsChan, cf.filteredIncidentsChan)
 	go cf.mapper.Map(cf.filteredIncidentsChan, cf.outChan)
-	cf.forwarder.Forward(cf.outChan, cf.incidentAckerChan)
+	cf.forwarder.Forward(cf.outChan, cf.incidentThenWhatChan)
 }
