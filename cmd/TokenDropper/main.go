@@ -73,28 +73,28 @@ func main() {
 	// try to populte domain hash and API key
 	// either from file or params...
 	// first, we didn't get api key and domain through flags? let's try to load them from file
-	if cfg.ImConsoleAPIKey == "" && cfg.ImConsoleAPIDomain == "" {
+	if cfg.ConsoleAPIKey == "" && cfg.ConsoleAPIDomain == "" {
 		// if we don't have them, we try to load it from same drectory
-		if cfg.ImConsoleTokenFile == "" { // if not
-			cfg.ImConsoleTokenFile = filepath.Join(cfg.DropWhere, "canarytools.config")
+		if cfg.ConsoleTokenFile == "" { // if not
+			cfg.ConsoleTokenFile = filepath.Join(cfg.DropWhere, "canarytools.config")
 		}
 		// do we have canarytools.config in same path? get data from it...
-		if _, err := os.Stat(cfg.ImConsoleTokenFile); os.IsNotExist(err) {
+		if _, err := os.Stat(cfg.ConsoleTokenFile); os.IsNotExist(err) {
 			l.Fatal("canarytools.config does not exist, and we couldn't get domain hash and API key!")
 		}
-		cfg.ImConsoleAPIKey, cfg.ImConsoleAPIDomain, err = canarytools.LoadTokenFile(cfg.ImConsoleTokenFile)
-		if err != nil || cfg.ImConsoleAPIDomain == "" || cfg.ImConsoleAPIKey == "" {
+		cfg.ConsoleAPIKey, cfg.ConsoleAPIDomain, err = canarytools.LoadTokenFile(cfg.ConsoleTokenFile)
+		if err != nil || cfg.ConsoleAPIDomain == "" || cfg.ConsoleAPIKey == "" {
 			l.WithFields(log.Fields{
 				"err":    err,
-				"api":    cfg.ImConsoleAPIKey,
-				"domain": cfg.ImConsoleAPIDomain,
+				"api":    cfg.ConsoleAPIKey,
+				"domain": cfg.ConsoleAPIDomain,
 			}).Fatal("error parsing token file")
 		}
 	}
 	// by now, we should have both key and domain
 
 	// create new canary API client
-	c, err := canarytools.NewClient(cfg.ImConsoleAPIDomain, cfg.ImConsoleAPIKey, l)
+	c, err := canarytools.NewClient(cfg.ConsoleAPIDomain, cfg.ConsoleAPIKey, l)
 	if err != nil {
 		l.WithField("err", err).Fatal("error creating canary client")
 	}

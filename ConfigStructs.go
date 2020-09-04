@@ -5,11 +5,17 @@ import "crypto/tls"
 // ConsoleAPIConfig contains configs for Console API input module
 type ConsoleAPIConfig struct {
 	// Console API input module
-	ImConsoleAPIKey    string // CANARY_APIKEY
-	ImConsoleAPIDomain string // CANARY_DOMAIN
-	ImConsoleTokenFile string // CANARY_TOKENFILE
+	ConsoleAPIKey      string // CANARY_APIKEY
+	ConsoleFactoryAuth string // CANARY_FACTORYAUTH
+	ConsoleAPIDomain   string // CANARY_DOMAIN
+	ConsoleTokenFile   string // CANARY_TOKENFILE
+
+	// OpMode can be "api" or "factory"
+	// this should be automatically set by NewClient
+	OpMode string
+
 	// TODO: Move to consoleAPIFeeder
-	ImConsoleAPIFetchInterval int // CANARY_INTERVAL
+	ConsoleAPIFetchInterval int // CANARY_INTERVAL
 }
 
 // TokenDropperConfig contains configs for the TokenDropper
@@ -24,7 +30,6 @@ type GeneralTokenDropperConfig struct {
 	FilesCount             int      // number of files per directory
 	RandYearsBack          int      // Randomize dates between Now() and 'years' back
 	LocalTokenProxy        bool     // start as a local token proxy?
-	FactoryAuth            string   // Token Factory auth string
 	DropWhere              string   // where to drop tokens?
 	KindsStr               string   // comma-separated string with what kind of tokens to drop
 	Kinds                  []string // what kind of tokens to drop

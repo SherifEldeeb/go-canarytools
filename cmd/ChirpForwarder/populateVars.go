@@ -62,18 +62,18 @@ func populateVarsFromEnv(cfg *canarytools.ChirpForwarderConfig) {
 
 	// INPUT MODULES
 	// Console API input module
-	if cfg.ImConsoleAPIKey == "" {
-		cfg.ImConsoleAPIKey, _ = os.LookupEnv("CANARY_APIKEY")
+	if cfg.ConsoleAPIKey == "" {
+		cfg.ConsoleAPIKey, _ = os.LookupEnv("CANARY_APIKEY")
 	}
-	if cfg.ImConsoleAPIDomain == "" {
-		cfg.ImConsoleAPIDomain, _ = os.LookupEnv("CANARY_DOMAIN")
+	if cfg.ConsoleAPIDomain == "" {
+		cfg.ConsoleAPIDomain, _ = os.LookupEnv("CANARY_DOMAIN")
 	}
-	if cfg.ImConsoleTokenFile == "" {
-		cfg.ImConsoleTokenFile, _ = os.LookupEnv("CANARY_TOKENFILE")
+	if cfg.ConsoleTokenFile == "" {
+		cfg.ConsoleTokenFile, _ = os.LookupEnv("CANARY_TOKENFILE")
 	}
-	if cfg.ImConsoleAPIFetchInterval == 0 {
+	if cfg.ConsoleAPIFetchInterval == 0 {
 		imConsoleAPIFetchIntervalInt, _ := os.LookupEnv("CANARY_INTERVAL")
-		cfg.ImConsoleAPIFetchInterval, _ = strconv.Atoi(imConsoleAPIFetchIntervalInt)
+		cfg.ConsoleAPIFetchInterval, _ = strconv.Atoi(imConsoleAPIFetchIntervalInt)
 	}
 
 	// OUTPUT MODULES
@@ -160,10 +160,10 @@ if .canary.lastcheck file does not exist, it will default to events from last 7 
 
 	// INPUT MODULES
 	// Console API input module
-	flag.StringVar(&cfg.ImConsoleAPIKey, "apikey", "", "API Key")
-	flag.StringVar(&cfg.ImConsoleAPIDomain, "domain", "", "canarytools domain")
-	flag.StringVar(&cfg.ImConsoleTokenFile, "tokenfile", "", "the token file 'canarytools.config' which contains api token and the domain")
-	flag.IntVar(&cfg.ImConsoleAPIFetchInterval, "interval", 0, "alert fetch interval 'in seconds'")
+	flag.StringVar(&cfg.ConsoleAPIKey, "apikey", "", "API Key")
+	flag.StringVar(&cfg.ConsoleAPIDomain, "domain", "", "canarytools domain")
+	flag.StringVar(&cfg.ConsoleTokenFile, "tokenfile", "", "the token file 'canarytools.config' which contains api token and the domain")
+	flag.IntVar(&cfg.ConsoleAPIFetchInterval, "interval", 0, "alert fetch interval 'in seconds'")
 
 	// OUTPUT MODULES
 	// TCP/UDP output module
@@ -235,9 +235,9 @@ func setDefaultVars(cfg *canarytools.ChirpForwarderConfig, l *log.Logger) {
 		cfg.IncidentFilter = "none"
 	}
 
-	if cfg.ImConsoleAPIFetchInterval == 0 {
+	if cfg.ConsoleAPIFetchInterval == 0 {
 		l.Warn("'interval' is not valid, or not specified; will set to '60 seconds'")
-		cfg.ImConsoleAPIFetchInterval = 60
+		cfg.ConsoleAPIFetchInterval = 60
 	}
 
 	// File forward module

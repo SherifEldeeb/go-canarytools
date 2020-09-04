@@ -17,11 +17,13 @@ import (
 
 // Client is a canarytools client, which is used to issue requests to the API
 type Client struct {
-	domain     string
-	apikey     string
-	baseURL    *url.URL
-	httpclient *http.Client
-	l          *log.Logger
+	domain      string
+	apikey      string
+	factoryAuth string
+	opmode      string // can be "api" or "factory"
+	baseURL     *url.URL
+	httpclient  *http.Client
+	l           *log.Logger
 }
 
 // GetFlockNameFromID retrieves the flock name given its ID
@@ -133,20 +135,32 @@ func (c Client) GetFlockSummary(flockid string) (flocksummaryresponse FlockSumma
 	return
 }
 
-// NewClient creates a new client from domain & API Key
-func NewClient(domain, apikey string, l *log.Logger) (c *Client, err error) {
+// NewClient creates a new client from domain, auth token and operation mode
+// operation mode determines the auth token type:
+// "api": auth token is the main console api
+// "factory": auth token  is the factory_auth
+func NewClient(domain, authtoken, opmode string, l *log.Logger) (c *Client, err error) {
 	c = &Client{}
 	c.l = l
 	c.httpclient = &http.Client{Timeout: 10 * time.Second}
 	c.domain = domain
-	c.apikey = apikey
+	switch opmode {
+	case "api":
+		c.apikey = authtoken
+	case "factory":
+		c.factoryAuth = authtoken
+	default:
+		return nil, fmt.Errorf("unsupported opmode: %s, valid values are 'api' & 'factory'")
+	}
 	c.baseURL, err = url.Parse(fmt.Sprintf("https://%s.canary.tools/api/v1/", domain))
 	if err != nil {
 		return
 	}
 
-	c.l.Debug("pinging console...")
-	err = c.Ping()
+	if c.opmode == "api" { // factory does not support ping
+		c.l.Debug("pinging console...")
+		err = c.Ping()
+	}
 	return
 }
 
@@ -228,6 +242,54 @@ output=json
 	return
 }
 
+// CreateFactory creates an auth string for the Canarytoken Factory endpoint.
+func (c Client) CreateFactory(memo string) (createfactoryresponse CreateFactoryResponse, err error) {
+	createfactoryresponse = CreateFactoryResponse{}
+	u := &url.Values{}
+	u.Set("memo", memo)
+
+	err = c.decodeResponse("canarytoken/create_factory", "POST", u, &createfactoryresponse)
+	if err != nil {
+		return
+	}
+
+	if createfactoryresponse.Result != "success" {
+		err = fmt.Errorf("error creating token: %s", err)
+	}
+	return
+}
+
+// CreateTokenFromFactory uses the canarytoken/factory API endpoint to create a token
+func (c Client) CreateTokenFromFactory(kind, memo, FlockID string, additionalParams *url.Values) (tokencreateresponse TokenCreateResponse, err error) {
+	tokencreateresponse = TokenCreateResponse{}
+	u := &url.Values{}
+	if additionalParams != nil {
+		u = additionalParams
+	}
+	u.Set("kind", kind)
+	u.Set("memo", memo)
+	if FlockID != "" {
+		u.Set("flock_id", FlockID)
+	}
+
+	switch kind {
+	// case "doc-msword", "pdf-acrobat-reader", "msword-macro", "msexcel-macro":
+	case "http", "dns", "cloned-web", "doc-msword", "web-image", "windows-dir", "pdf-acrobat-reader", "msword-macro", "msexcel-macro", "aws-id", "qr-code", "fast-redirect", "slow-redirect", "slack-api":
+	// TODO: must check additional params per kind
+	default:
+		return tokencreateresponse, errors.New("unsupported token type: " + kind)
+	}
+
+	err = c.decodeResponse("canarytoken/factory", "POST", u, &tokencreateresponse)
+	if err != nil {
+		return
+	}
+	if tokencreateresponse.Result != "success" {
+		err = fmt.Errorf("error creating token: %s", err)
+	}
+	return
+}
+
 // CreateTokenFromAPI uses the canarytoken/create API endpoint to create a token
 func (c Client) CreateTokenFromAPI(kind, memo, FlockID string, additionalParams *url.Values) (tokencreateresponse TokenCreateResponse, err error) {
 	tokencreateresponse = TokenCreateResponse{}
@@ -250,6 +312,12 @@ func (c Client) CreateTokenFromAPI(kind, memo, FlockID string, additionalParams 
 	}
 
 	err = c.decodeResponse("canarytoken/create", "POST", u, &tokencreateresponse)
+	if err != nil {
+		return
+	}
+	if tokencreateresponse.Result != "success" {
+		err = fmt.Errorf("error creating token: %s", err)
+	}
 	return
 }
 
@@ -299,8 +367,17 @@ func (c Client) api(endpoint string, params *url.Values) (fullURL *url.URL, err 
 	if params == nil {
 		params = &url.Values{}
 	}
-	// always add auth token to list of values
-	params.Add("auth_token", c.apikey)
+
+	switch c.opmode {
+	case "api":
+		// always add auth token to list of values
+		params.Add("auth_token", c.apikey)
+	case "factory":
+		// always add auth token to list of values
+		params.Add("factory_auth", c.factoryAuth)
+	default:
+		c.l.WithField("opmode", c.opmode).Fatal("unsupported client opmode")
+	}
 
 	// adding the API endpoint to path
 	fullURL, err = url.Parse(c.baseURL.String())
