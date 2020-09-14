@@ -237,7 +237,6 @@ output=json
 		_, err = c.DownloadTokenFromAPI(tcr.Canarytoken.Canarytoken, filename)
 	default:
 		err = fmt.Errorf("unsupported Canarytoken: %s", kind)
-		return
 	}
 	return
 }
