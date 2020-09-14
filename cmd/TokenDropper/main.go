@@ -3,6 +3,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -49,52 +50,16 @@ func main() {
 		l.SetLevel(log.InfoLevel)
 	}
 
-	// start
-	// dpending on the execution environment, sometimes "./" does not get evaluated as "same dir as the exe file"
-	// so, till I figure out a better way, we do the following.
-	if cfg.DropWhere == "./" {
-		p, err := os.Executable()
-		if err != nil {
-			l.Fatal("couldn't get current directory")
-		}
-		cfg.DropWhere = filepath.Dir(p) // full path to executable
-	}
-	err = os.Chdir(cfg.DropWhere)
+	// Finish config logic
+	err = finishConfig(&cfg, l)
 	if err != nil {
-		l.WithField("err", err).Fatal("couldn't change directory")
+		l.WithField("err", err).Fatal("configuration error")
 	}
 
-	l.WithField("where", cfg.DropWhere).Info("Dropping Canarytokens")
-
-	if cfg.FilesCount > 30 {
-		l.Warn("File count is > 30 ... will set to 30")
-	}
-
-	// try to populte domain hash and API key
-	// either from file or params...
-	// first, we didn't get api key and domain through flags? let's try to load them from file
-	if cfg.ConsoleAPIKey == "" && cfg.ConsoleAPIDomain == "" {
-		// if we don't have them, we try to load it from same drectory
-		if cfg.ConsoleTokenFile == "" { // if not
-			cfg.ConsoleTokenFile = filepath.Join(cfg.DropWhere, "canarytools.config")
-		}
-		// do we have canarytools.config in same path? get data from it...
-		if _, err := os.Stat(cfg.ConsoleTokenFile); os.IsNotExist(err) {
-			l.Fatal("canarytools.config does not exist, and we couldn't get domain hash and API key!")
-		}
-		cfg.ConsoleAPIKey, cfg.ConsoleAPIDomain, err = canarytools.LoadTokenFile(cfg.ConsoleTokenFile)
-		if err != nil || cfg.ConsoleAPIDomain == "" || cfg.ConsoleAPIKey == "" {
-			l.WithFields(log.Fields{
-				"err":    err,
-				"api":    cfg.ConsoleAPIKey,
-				"domain": cfg.ConsoleAPIDomain,
-			}).Fatal("error parsing token file")
-		}
-	}
 	// by now, we should have both key and domain
 
 	// create new canary API client
-	c, err := canarytools.NewClient(cfg.ConsoleAPIDomain, cfg.ConsoleAPIKey, l)
+	c, err := canarytools.NewClient(cfg.ConsoleAPIDomain, cfg.ConsoleAPIKey, cfg.OpMode, l)
 	if err != nil {
 		l.WithField("err", err).Fatal("error creating canary client")
 	}
@@ -173,4 +138,47 @@ func main() {
 			}).Error("Error changing file timestamps")
 		}
 	}
+}
+
+func finishConfig(cfg *canarytools.TokenDropperConfig, l *log.Logger) (err error) {
+	// start
+	// dpending on the execution environment, sometimes "./" does not get evaluated as "same dir as the exe file"
+	// so, till I figure out a better way, we do the following.
+	if cfg.DropWhere == "./" {
+		p, err := os.Executable()
+		if err != nil {
+			return fmt.Errorf("couldn't get current directory")
+		}
+		cfg.DropWhere = filepath.Dir(p) // full path to executable
+	}
+	err = os.Chdir(cfg.DropWhere)
+	if err != nil {
+		fmt.Errorf("couldn't change directory: %s", err)
+	}
+
+	l.WithField("where", cfg.DropWhere).Info("Dropping Canarytokens")
+
+	if cfg.FilesCount > 20 {
+		l.Warn("File count is > 20 ... will set to 20")
+		cfg.FilesCount = 20
+	}
+
+	// try to populte domain hash and API key
+	// either from file or params...
+	// first, we didn't get api key and domain through flags? let's try to load them from file
+	if cfg.ConsoleAPIKey == "" && cfg.ConsoleAPIDomain == "" {
+		// if we don't have them, we try to load it from same drectory
+		if cfg.ConsoleTokenFile == "" { // if not
+			cfg.ConsoleTokenFile = filepath.Join(cfg.DropWhere, "canarytools.config")
+		}
+		// do we have canarytools.config in same path? get data from it...
+		if _, err := os.Stat(cfg.ConsoleTokenFile); os.IsNotExist(err) {
+			return fmt.Errorf("canarytools.config does not exist, and we couldn't get domain hash and API key")
+		}
+		cfg.ConsoleAPIKey, cfg.ConsoleAPIDomain, err = canarytools.LoadTokenFile(cfg.ConsoleTokenFile)
+		if err != nil || cfg.ConsoleAPIDomain == "" || cfg.ConsoleAPIKey == "" {
+			return fmt.Errorf("error parsing token file: %s", err)
+		}
+	}
+	return
 }
