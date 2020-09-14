@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -144,7 +145,8 @@ func NewClient(domain, authtoken, opmode string, l *log.Logger) (c *Client, err 
 	c.l = l
 	c.httpclient = &http.Client{Timeout: 10 * time.Second}
 	c.domain = domain
-	switch opmode {
+	c.opmode = opmode
+	switch c.opmode {
 	case "api":
 		c.apikey = authtoken
 	case "factory":
@@ -185,7 +187,7 @@ func (c Client) DeleteCanarytoken(canarytoken string) (err error) {
 }
 
 // DropFileToken drops a file token
-func (c Client) DropFileToken(kind, memo, filename, FlockID string, CreateFlockIfNotExists bool) (err error) {
+func (c Client) DropFileToken(kind, memo, dropWhere, filename, FlockID string, CreateFlockIfNotExists, CreateDirectoryIfNotExists bool) (err error) {
 	c.l.WithFields(log.Fields{
 		"kind":                   kind,
 		"memo":                   memo,
@@ -193,6 +195,20 @@ func (c Client) DropFileToken(kind, memo, filename, FlockID string, CreateFlockI
 		"CreateFlockIfNotExists": CreateFlockIfNotExists,
 		"filename":               filename,
 	}).Debugf("Generating Token")
+
+	// check if 'where' directory exists
+	// if it doesn't exist, and CreateDirectoryIfNotExists is true, create it
+	// if it doesn't exist, and CreateDirectoryIfNotExists is false, error out
+	if _, errstat := os.Stat(dropWhere); os.IsNotExist(errstat) { // it does NOT exist
+		if CreateDirectoryIfNotExists {
+			os.MkdirAll(dropWhere, 0755)
+		} else {
+			err = fmt.Errorf("'where' does not exist, and you told me not to create it ... gonna have to bail out")
+			return
+		}
+	}
+
+	fullFilePath := filepath.Join(dropWhere, filename)
 
 	var tcr = TokenCreateResponse{}
 	switch kind {
@@ -209,12 +225,16 @@ func (c Client) DropFileToken(kind, memo, filename, FlockID string, CreateFlockI
 aws_access_key=%s
 aws_secret_access_key=%s
 region=us-east-2
-output=json
+output=json 
 `
 		// simple checks
-		if !fileExists(filename) {
+		exists, errFileExists := fileExists(fullFilePath)
+		if errFileExists != nil {
+			return errFileExists
+		}
+		if !exists {
 			// Create the file
-			out, err := os.Create(filename)
+			out, err := os.Create(fullFilePath)
 			if err != nil {
 				return err
 			}
@@ -223,7 +243,7 @@ output=json
 			// Write the body to file
 			_, err = out.WriteString(fmt.Sprintf(aswTemplate, tcr.Canarytoken.AccessKeyID, tcr.Canarytoken.SecretAccessKey))
 		} else {
-			return fmt.Errorf("file exists: %s", filename)
+			return fmt.Errorf("file exists: %s", fullFilePath)
 		}
 	case "doc-msword", "pdf-acrobat-reader", "msword-macro", "msexcel-macro":
 		tcr, err = c.CreateTokenFromAPI(kind, memo, FlockID, nil)
@@ -234,7 +254,7 @@ output=json
 			err = fmt.Errorf("failed to CreateTokenFromAPI")
 			return
 		}
-		_, err = c.DownloadTokenFromAPI(tcr.Canarytoken.Canarytoken, filename)
+		_, err = c.DownloadTokenFromAPI(tcr.Canarytoken.Canarytoken, fullFilePath)
 	default:
 		err = fmt.Errorf("unsupported Canarytoken: %s", kind)
 	}
@@ -339,7 +359,11 @@ func (c Client) DownloadTokenFromAPI(canarytoken, filename string) (n int64, err
 		return 0, fmt.Errorf("DownloadTokenFromAPI returned: %d", resp.StatusCode)
 	}
 
-	if !fileExists(filename) {
+	exists, err := fileExists(filename)
+	if err != nil {
+		return
+	}
+	if !exists {
 		// Create the file
 		out, err := os.Create(filename)
 		if err != nil {

@@ -39,7 +39,7 @@ func GetRandomTokenName(kind string) (name string, err error) {
 
 // CreateMemo creates a meaningful memo to be included during Canarytoken creation
 // value is logfmt encoded for easier processing
-func CreateMemo(filename, customMemo string) (memo string, err error) {
+func CreateMemo(filename, dropWhere, customMemo string) (memo string, err error) {
 	keyVals := []interface{}{
 		"Generator", "TokenDropper",
 	}
@@ -67,6 +67,9 @@ func CreateMemo(filename, customMemo string) (memo string, err error) {
 
 	// Add original filename
 	keyVals = append(keyVals, "OriginalFilename", filename)
+
+	// Add 'where' this token has been dropped
+	keyVals = append(keyVals, "Where", dropWhere)
 
 	lf, err := logfmt.MarshalKeyvals(keyVals...)
 	if err != nil {

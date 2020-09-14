@@ -1,11 +1,20 @@
 package canarytools
 
-import "os"
+import (
+	"fmt"
+	"os"
+)
 
-func fileExists(filename string) bool {
+func fileExists(filename string) (exists bool, err error) {
 	info, err := os.Stat(filename)
 	if os.IsNotExist(err) {
-		return false
+		return false, nil
 	}
-	return !info.IsDir()
+	if err != nil {
+		return false, err
+	}
+	if info != nil {
+		return !info.IsDir(), nil
+	}
+	return false, fmt.Errorf("os.Stat returned a nil 'FileInfo' struct")
 }

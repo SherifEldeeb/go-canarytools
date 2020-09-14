@@ -110,8 +110,9 @@ func main() {
 		l.WithFields(log.Fields{
 			"kind":     kind,
 			"filename": filename,
+			"where":    cfg.DropWhere,
 		}).Info("Generating Token")
-		memo, err := CreateMemo(filename, cfg.CustomMemo)
+		memo, err := CreateMemo(filename, cfg.DropWhere, cfg.CustomMemo)
 		if err != nil {
 			l.Error(err)
 			continue
@@ -123,14 +124,18 @@ func main() {
 			"memo":     memo,
 		}).Debug("Generating Token")
 		// drop
-		filename = filepath.Join(cfg.DropWhere, filename)
-		err = c.DropFileToken(kind, memo, filename, cfg.FlockID, cfg.CreateFlockIfNotExists)
+		// filename = filepath.Join(cfg.DropWhere, filename)
+		err = c.DropFileToken(kind, memo, cfg.DropWhere, filename, cfg.FlockID, cfg.CreateFlockIfNotExists, cfg.CreateDirectoryIfNotExists)
 		if err != nil {
 			l.Error(err)
 			continue
 		}
+
+		// 	fullFilePath := filepath.Join(dropWhere, filename)
+		fullFilePath := filepath.Join(cfg.DropWhere, filename)
+
 		rtime := GetRandomDate(cfg.RandYearsBack)
-		err = os.Chtimes(filename, rtime, rtime)
+		err = os.Chtimes(fullFilePath, rtime, rtime)
 		if err != nil {
 			l.WithFields(log.Fields{
 				"filename": filename,
