@@ -19,6 +19,17 @@ var (
 	tokendropper canarytools.TokenDropper
 	cfg          canarytools.TokenDropperConfig
 	err          error
+
+	// constants for build-time hardcoding of params
+	// those could be set at build time to create a self-running executable
+	// go build -ldflags "-X main.DOMAIN=$domain_hash  -X main.APIKEY=$api_auth -w -s -linkmode=internal"
+
+	// DOMAIN is the domain hash
+	DOMAIN string
+	// APIKEY is the main console API auth token
+	APIKEY string
+	// FACTORYAUTH is the factory auth token
+	FACTORYAUTH string
 )
 
 func init() {
@@ -28,12 +39,6 @@ func init() {
 
 func main() {
 	flag.Parse()
-
-	// overwrite from flag
-	for _, k := range strings.Split(cfg.KindsStr, ",") {
-		cfg.Kinds = append(cfg.Kinds, strings.TrimSpace(k))
-	}
-
 	// Set LogLevel
 	l := log.New()
 	switch cfg.LogLevel {
@@ -48,6 +53,25 @@ func main() {
 	default:
 		l.Warn("unsupported log level, or none specified; will set to 'info'")
 		l.SetLevel(log.InfoLevel)
+	}
+
+	// Set all hardcoded info, if provided
+	if DOMAIN != "" && cfg.ConsoleAPIDomain == "" { // command line values always Supersede hardcoded ones
+		l.Debug("found pre-configured domain hash value")
+		cfg.ConsoleAPIDomain = DOMAIN
+	}
+	if APIKEY != "" && cfg.ConsoleAPIKey == "" { // command line values always Supersede hardcoded ones
+		l.Debug("found pre-configured API auth value")
+		cfg.ConsoleAPIKey = APIKEY
+	}
+	if FACTORYAUTH != "" && cfg.ConsoleFactoryAuth == "" { // command line values always Supersede hardcoded ones
+		l.Debug("found pre-configured factory auth value")
+		cfg.ConsoleFactoryAuth = FACTORYAUTH
+	}
+
+	// overwrite from flag
+	for _, k := range strings.Split(cfg.KindsStr, ",") {
+		cfg.Kinds = append(cfg.Kinds, strings.TrimSpace(k))
 	}
 
 	// Finish config logic
@@ -146,6 +170,7 @@ func main() {
 }
 
 func finishConfig(cfg *canarytools.TokenDropperConfig, l *log.Logger) (err error) {
+	// TODO: a big one ... lots of factory logic
 	// start
 	// dpending on the execution environment, sometimes "./" does not get evaluated as "same dir as the exe file"
 	// so, till I figure out a better way, we do the following.
@@ -158,7 +183,7 @@ func finishConfig(cfg *canarytools.TokenDropperConfig, l *log.Logger) (err error
 	}
 	err = os.Chdir(cfg.DropWhere)
 	if err != nil {
-		fmt.Errorf("couldn't change directory: %s", err)
+		return fmt.Errorf("couldn't change directory: %s", err)
 	}
 
 	l.WithField("where", cfg.DropWhere).Info("Dropping Canarytokens")
