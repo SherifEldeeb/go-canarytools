@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"os"
 	"os/user"
+	"runtime"
 	"time"
 
 	"github.com/go-logfmt/logfmt"
@@ -70,6 +71,9 @@ func CreateMemo(filename, dropWhere, customMemo string) (memo string, err error)
 
 	// Add 'where' this token has been dropped
 	keyVals = append(keyVals, "Where", dropWhere)
+
+	// Add 'OS' where this token has been dropped
+	keyVals = append(keyVals, "OS", runtime.GOOS)
 
 	lf, err := logfmt.MarshalKeyvals(keyVals...)
 	if err != nil {

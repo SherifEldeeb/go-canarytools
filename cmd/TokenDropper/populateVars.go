@@ -9,7 +9,7 @@ import (
 func populateVarsFromFlags(cfg *canarytools.TokenDropperConfig) {
 	// General flags
 	flag.StringVar(&cfg.ConsoleAPIDomain, "domain", "", "Canary console domain (hash)")
-	flag.IntVar(&cfg.FilesCount, "count", 4, "Number of Canarytoken files to be generated")
+	flag.IntVar(&cfg.FilesCount, "count", 3, "Number of Canarytoken files to be generated")
 	flag.IntVar(&cfg.RandYearsBack, "yearsback", 3, `Randomize dates of modified files between Now() and 'years' back
 we do this so generated tokens better blend in`)
 	flag.StringVar(&cfg.DropWhere, "where", "./", "where to drop Canarytokens?")
@@ -32,7 +32,7 @@ use this flag to add custom text to the Canarytoken memo`)
 	flag.StringVar(&cfg.FactoryAuthFile, "factoryauthfile", "", "the factory auth file 'canaryfactoryauth.config' which contains factory auth and the domain")
 
 	// Flock Specific flags
-	flag.StringVar(&cfg.FlockName, "flock", "", "created tokens will be part of this flock 'if empty, will be assigned to the default flock'")
+	flag.StringVar(&cfg.FlockName, "flock", "DropperDemo", "created tokens will be part of this flock 'if empty, will be assigned to the default flock'")
 	flag.BoolVar(&cfg.CreateFlockIfNotExists, "createflock", true, "Create the flock if it doesn't exist? has to be used with '-flock', and is not suported with factory")
 
 }

@@ -69,7 +69,7 @@ func main() {
 		cfg.ConsoleFactoryAuth = FACTORYAUTH
 	}
 
-	// overwrite from flag
+	// overwrite kinds from flag after splitting
 	for _, k := range strings.Split(cfg.KindsStr, ",") {
 		cfg.Kinds = append(cfg.Kinds, strings.TrimSpace(k))
 	}
@@ -181,6 +181,19 @@ func finishConfig(cfg *canarytools.TokenDropperConfig, l *log.Logger) (err error
 		}
 		cfg.DropWhere = filepath.Dir(p) // full path to executable
 	}
+	// TODO: remove from ConsoleAPI.go
+	// check if 'where' directory exists
+	// if it doesn't exist, and CreateDirectoryIfNotExists is true, create it
+	// if it doesn't exist, and CreateDirectoryIfNotExists is false, error out
+	if _, errstat := os.Stat(cfg.DropWhere); os.IsNotExist(errstat) { // it does NOT exist
+		if cfg.CreateDirectoryIfNotExists {
+			os.MkdirAll(cfg.DropWhere, 0755)
+		} else {
+			err = fmt.Errorf("'where' does not exist, and you told me not to create it ... gonna have to bail out")
+			return
+		}
+	}
+
 	err = os.Chdir(cfg.DropWhere)
 	if err != nil {
 		return fmt.Errorf("couldn't change directory: %s", err)
