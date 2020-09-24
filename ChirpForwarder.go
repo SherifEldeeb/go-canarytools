@@ -242,6 +242,19 @@ func (cf *ChirpForwarder) setForwarder() {
 			kf, _ = NewKafkaForwarder(brokers, cf.cfg.OmKafkaTopic, nil, cf.l)
 		}
 		cf.forwarder = kf
+	case "sqs":
+		// bulding new sqs out
+		if cf.cfg.OmSQSQueueName == "" {
+			cf.l.Fatal("missing SQS queue name")
+		}
+		var sqsf = &SQSForwarder{}
+		sqsf, err := NewSQSForwarder(cf.cfg.OmSQSQueueName, cf.l)
+		if err != nil {
+			cf.l.WithFields(log.Fields{
+				"err": err,
+			}).Fatal("error during creating SQS Out client")
+		}
+		cf.forwarder = sqsf
 	case "":
 		cf.l.Fatal("you have to provide an output module! ('-output' flag, or CANARY_OUTPUT env variable)")
 	default:
