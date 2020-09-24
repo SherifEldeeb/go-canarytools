@@ -75,6 +75,9 @@ type ChirpForwarderConfig struct {
 	// kafka forward module
 	KafkaOutConfig
 
+	// SQS forward module
+	SQSOutConfig
+
 	// TLS config
 	TLSConfig *tls.Config
 }
@@ -137,4 +140,10 @@ type KafkaOutConfig struct {
 	// kafka forward module
 	OmKafkaBrokers string // CANARY_KAFKABROKERS
 	OmKafkaTopic   string // CANARY_KAFKATOPIC
+}
+
+// SQSOutConfig contains configs for the kafka forward module
+type SQSOutConfig struct {
+	// SQS forward module
+	OmSQSQueueName string // CANARY_SQSQUEUENAME
 }

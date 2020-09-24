@@ -134,12 +134,17 @@ func populateVarsFromEnv(cfg *canarytools.ChirpForwarderConfig) {
 	if cfg.OmKafkaTopic == "" {
 		cfg.OmKafkaTopic, _ = os.LookupEnv("CANARY_KAFKATOPIC")
 	}
+
+	// SQS forward module
+	if cfg.OmSQSQueueName == "" {
+		cfg.OmSQSQueueName, _ = os.LookupEnv("CANARY_SQSQUEUENAME")
+	}
 }
 
 func populateVarsFromFlags(cfg *canarytools.ChirpForwarderConfig) {
 	// General flags
 	flag.StringVar(&cfg.FeederModule, "feeder", "consoleapi", "input module")
-	flag.StringVar(&cfg.ForwarderModule, "output", "", "output module ('tcp', 'file', 'elastic' or 'kafka')")
+	flag.StringVar(&cfg.ForwarderModule, "output", "", "output module ('tcp', 'file', 'elastic', 'kafka' or 'sqs')")
 	flag.StringVar(&cfg.Loglevel, "loglevel", "", "set loglevel, can be one of ('info', 'warning' or 'debug')")
 	flag.StringVar(&cfg.ThenWhat, "then", "nothing", "what to do after getting an incident? can be one of ('nothing', 'ack' or 'delete')")
 	flag.StringVar(&cfg.SinceWhenString, "since", "", `get events newer than this time.
@@ -189,6 +194,9 @@ if .canary.lastcheck file does not exist, it will default to events from last 7 
 	flag.StringVar(&cfg.OmKafkaBrokers, "kafkabrokers", "", `[OUT|KAFKA] kafka brokers "broker:port"
 		for multiple brokers, separate using semicolon "broker1:9092;broker2:9092"`)
 	flag.StringVar(&cfg.OmKafkaTopic, "kafkatopic", "", "[OUT|KAFKA] kafka topic 'defaults to canarychirps if not set'")
+
+	// SQS forward module
+	flag.StringVar(&cfg.OmSQSQueueName, "sqsqueue", "", `[OUT|SQS] AWS SQS queue name (will be created if not exist)`)
 }
 
 func setDefaultVars(cfg *canarytools.ChirpForwarderConfig, l *log.Logger) {
@@ -242,19 +250,19 @@ func setDefaultVars(cfg *canarytools.ChirpForwarderConfig, l *log.Logger) {
 
 	// File forward module
 	if cfg.OmFileMaxSize == 0 {
-		l.Warn("'maxsize' is not valid, or not specified; will set to '8 Megabytes'")
+		l.Debug("'maxsize' is not valid, or not specified; will set to '8 Megabytes'")
 		cfg.OmFileMaxSize = 8
 	}
 	if cfg.OmFileMaxBackups == 0 {
-		l.Warn("'maxbackups' is not valid, or not specified; will set to '14 files'")
+		l.Debug("'maxbackups' is not valid, or not specified; will set to '14 files'")
 		cfg.OmFileMaxBackups = 14
 	}
 	if cfg.OmFileMaxAge == 0 {
-		l.Warn("'maxage' is not valid, or not specified; will set to '120 days'")
+		l.Debug("'maxage' is not valid, or not specified; will set to '120 days'")
 		cfg.OmFileMaxAge = 120
 	}
 	if cfg.OmFileName == "" {
-		l.Warn("'filename' is not valid, or not specified; will set to 'canaryChirps.json'")
+		l.Debug("'filename' is not valid, or not specified; will set to 'canaryChirps.json'")
 		cfg.OmFileName = "canaryChirps.json"
 	}
 }
