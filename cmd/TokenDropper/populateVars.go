@@ -32,7 +32,7 @@ use this flag to add custom text to the Canarytoken memo`)
 	flag.StringVar(&cfg.FactoryAuthFile, "factoryauthfile", "", "the factory auth file 'canaryfactoryauth.config' which contains factory auth and the domain")
 
 	// Flock Specific flags
-	flag.StringVar(&cfg.FlockName, "flock", "DropperDemo", "created tokens will be part of this flock 'if empty, will be assigned to the default flock'")
+	flag.StringVar(&cfg.FlockName, "flock", "", "created tokens will be part of this flock 'if empty, will be assigned to the default flock'")
 	flag.BoolVar(&cfg.CreateFlockIfNotExists, "createflock", true, "Create the flock if it doesn't exist? has to be used with '-flock', and is not suported with factory")
 
 }
