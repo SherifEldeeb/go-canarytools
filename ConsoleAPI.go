@@ -194,14 +194,19 @@ func (c Client) DropFileToken(kind, memo, dropWhere, filename, FlockID string, C
 		"flock_id":               FlockID,
 		"CreateFlockIfNotExists": CreateFlockIfNotExists,
 		"filename":               filename,
+		"dropWhere":              dropWhere,
 	}).Debugf("Generating Token")
 
 	// check if 'where' directory exists
 	// if it doesn't exist, and CreateDirectoryIfNotExists is true, create it
 	// if it doesn't exist, and CreateDirectoryIfNotExists is false, error out
-	if _, errstat := os.Stat(dropWhere); os.IsNotExist(errstat) { // it does NOT exist
+	absPath, err := filepath.Abs(dropWhere)
+	if err != nil {
+		return
+	}
+	if _, errstat := os.Stat(absPath); os.IsNotExist(errstat) { // it does NOT exist
 		if CreateDirectoryIfNotExists {
-			os.MkdirAll(dropWhere, 0755)
+			os.MkdirAll(absPath, 0755)
 		} else {
 			err = fmt.Errorf("'where' does not exist, and you told me not to create it ... gonna have to bail out")
 			return

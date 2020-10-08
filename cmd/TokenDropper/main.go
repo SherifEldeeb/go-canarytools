@@ -187,6 +187,10 @@ func finishConfig(cfg *canarytools.TokenDropperConfig, l *log.Logger) (err error
 	// check if 'where' directory exists
 	// if it doesn't exist, and CreateDirectoryIfNotExists is true, create it
 	// if it doesn't exist, and CreateDirectoryIfNotExists is false, error out
+	cfg.DropWhere, err = filepath.Abs(cfg.DropWhere)
+	if err != nil {
+		return
+	}
 	if _, errstat := os.Stat(cfg.DropWhere); os.IsNotExist(errstat) { // it does NOT exist
 		if cfg.CreateDirectoryIfNotExists {
 			os.MkdirAll(cfg.DropWhere, 0755)
