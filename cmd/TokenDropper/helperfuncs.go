@@ -57,14 +57,14 @@ func CreateMemo(filename, dropWhere, customMemo string) (memo string, err error)
 	if err != nil {
 		return
 	}
-	keyVals = append(keyVals, "Username", u.Username)
+	keyVals = append(keyVals, "TD-User", u.Username)
 
 	// Get Hostname
 	hn, err := os.Hostname()
 	if err != nil {
 		return
 	}
-	keyVals = append(keyVals, "Hostname", hn)
+	keyVals = append(keyVals, "TD-Host", hn)
 
 	// Add original filename
 	keyVals = append(keyVals, "OriginalFilename", filename)
@@ -73,7 +73,7 @@ func CreateMemo(filename, dropWhere, customMemo string) (memo string, err error)
 	keyVals = append(keyVals, "Where", dropWhere)
 
 	// Add 'OS' where this token has been dropped
-	keyVals = append(keyVals, "OS", runtime.GOOS)
+	keyVals = append(keyVals, "TD-OS", runtime.GOOS)
 
 	lf, err := logfmt.MarshalKeyvals(keyVals...)
 	if err != nil {
@@ -158,35 +158,3 @@ func GetRandomDateString(years int) (t string) {
 func pick(s []string) string {
 	return s[rand.Intn(len(s))]
 }
-
-// 	case "http", "dns", "cloned-web", "doc-msword", "web-image", "windows-dir", "aws-s3", "pdf-acrobat-reader", "msword-macro", "msexcel-macro", "aws-id", "apeeper", "qr-code", "svn", "sql", "fast-redirect", "slow-redirect":
-// t, err := c.CreateTokenFromAPI("dns", "koko dns", "", nil)
-// if err != nil {
-// 	l.Fatal(err)
-// }
-
-// n, err := c.DownloadTokenFromAPI(t.Canarytoken.Canarytoken, "hamada.docx")
-// if err != nil {
-// 	l.Fatal(err)
-// }
-// l.Infof("written %d bytes", n)
-
-// // get flocks
-// flockssummary, err := c.GetFlocksSummary()
-// if err != nil {
-// 	l.Fatal(err)
-// }
-// for fid, summary := range flockssummary.FlocksSummary {
-// 	l.Infof("%s:%s", fid, summary.Name)
-// 	test_flock_id, err := c.GetFlockIDFromName(summary.Name)
-// 	if err != nil {
-// 		l.Fatal(err)
-// 	}
-// 	test_flock_name, err := c.GetFlockNameFromID(fid)
-// 	if err != nil {
-// 		l.Fatal(err)
-// 	}
-// 	l.Infof("[func] %s:%s", test_flock_name, test_flock_id)
-// }
-// flock:e5d3b65df5438f1b285692ff3c705571
-// flock_id, err :=  c.GetFlockIDFromName("Default Flock")

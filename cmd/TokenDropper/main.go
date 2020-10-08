@@ -124,47 +124,49 @@ func main() {
 		"count": cfg.FilesCount,
 		"flock": cfg.FlockName,
 	}).Info("dropping tokens..")
+	// kind := pick(cfg.Kinds)
 	for i := 0; i < cfg.FilesCount; i++ {
-		kind := pick(cfg.Kinds)
-		filename, err := GetRandomTokenName(kind)
-		if err != nil {
-			l.Error(err)
-			continue
-		}
-		l.WithFields(log.Fields{
-			"kind":     kind,
-			"filename": filename,
-			"where":    cfg.DropWhere,
-		}).Info("Generating Token")
-		memo, err := CreateMemo(filename, cfg.DropWhere, cfg.CustomMemo)
-		if err != nil {
-			l.Error(err)
-			continue
-		}
-
-		l.WithFields(log.Fields{
-			"kind":     kind,
-			"filename": filename,
-			"memo":     memo,
-		}).Debug("Generating Token")
-		// drop
-		// filename = filepath.Join(cfg.DropWhere, filename)
-		err = c.DropFileToken(kind, memo, cfg.DropWhere, filename, cfg.FlockID, cfg.CreateFlockIfNotExists, cfg.CreateDirectoryIfNotExists)
-		if err != nil {
-			l.Error(err)
-			continue
-		}
-
-		// 	fullFilePath := filepath.Join(dropWhere, filename)
-		fullFilePath := filepath.Join(cfg.DropWhere, filename)
-
-		rtime := GetRandomDate(cfg.RandYearsBack)
-		err = os.Chtimes(fullFilePath, rtime, rtime)
-		if err != nil {
+		for _, kind := range cfg.Kinds {
+			filename, err := GetRandomTokenName(kind)
+			if err != nil {
+				l.Error(err)
+				continue
+			}
 			l.WithFields(log.Fields{
+				"kind":     kind,
 				"filename": filename,
-				"err":      err,
-			}).Error("Error changing file timestamps")
+				"where":    cfg.DropWhere,
+			}).Info("Generating Token")
+			memo, err := CreateMemo(filename, cfg.DropWhere, cfg.CustomMemo)
+			if err != nil {
+				l.Error(err)
+				continue
+			}
+
+			l.WithFields(log.Fields{
+				"kind":     kind,
+				"filename": filename,
+				"memo":     memo,
+			}).Debug("Generating Token")
+			// drop
+			// filename = filepath.Join(cfg.DropWhere, filename)
+			err = c.DropFileToken(kind, memo, cfg.DropWhere, filename, cfg.FlockID, cfg.CreateFlockIfNotExists, cfg.CreateDirectoryIfNotExists)
+			if err != nil {
+				l.Error(err)
+				continue
+			}
+
+			// 	fullFilePath := filepath.Join(dropWhere, filename)
+			fullFilePath := filepath.Join(cfg.DropWhere, filename)
+
+			rtime := GetRandomDate(cfg.RandYearsBack)
+			err = os.Chtimes(fullFilePath, rtime, rtime)
+			if err != nil {
+				l.WithFields(log.Fields{
+					"filename": filename,
+					"err":      err,
+				}).Error("Error changing file timestamps")
+			}
 		}
 	}
 }
