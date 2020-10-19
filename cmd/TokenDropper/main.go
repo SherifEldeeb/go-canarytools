@@ -127,10 +127,15 @@ func main() {
 	// kind := pick(cfg.Kinds)
 	for i := 0; i < cfg.FilesCount; i++ {
 		for _, kind := range cfg.Kinds {
-			filename, err := GetRandomTokenName(kind)
-			if err != nil {
-				l.Error(err)
-				continue
+			var filename string
+			if cfg.FileName != "" {
+				filename = cfg.FileName
+			} else {
+				filename, err = GetRandomTokenName(kind, cfg.RandomizeFilenames)
+				if err != nil {
+					l.Error(err)
+					continue
+				}
 			}
 			l.WithFields(log.Fields{
 				"kind":     kind,
@@ -148,15 +153,14 @@ func main() {
 				"filename": filename,
 				"memo":     memo,
 			}).Debug("Generating Token")
+
 			// drop
-			// filename = filepath.Join(cfg.DropWhere, filename)
 			err = c.DropFileToken(kind, memo, cfg.DropWhere, filename, cfg.FlockID, cfg.CreateFlockIfNotExists, cfg.CreateDirectoryIfNotExists)
 			if err != nil {
 				l.Error(err)
 				continue
 			}
 
-			// 	fullFilePath := filepath.Join(dropWhere, filename)
 			fullFilePath := filepath.Join(cfg.DropWhere, filename)
 
 			rtime := GetRandomDate(cfg.RandYearsBack)
@@ -227,6 +231,49 @@ func finishConfig(cfg *canarytools.TokenDropperConfig, l *log.Logger) (err error
 		cfg.ConsoleAPIKey, cfg.ConsoleAPIDomain, err = canarytools.LoadTokenFile(cfg.ConsoleTokenFile)
 		if err != nil || cfg.ConsoleAPIDomain == "" || cfg.ConsoleAPIKey == "" {
 			return fmt.Errorf("error parsing token file: %s", err)
+		}
+	}
+
+	// checks if they specified the filename
+	if cfg.FileName != "" {
+		if cfg.RandomizeFilenames {
+			l.Warn("filename has been specified, but 'randomize-filenames' is not 'true' ... will be setting it to 'false'")
+			cfg.RandomizeFilenames = false
+		}
+		if len(cfg.Kinds) > 1 {
+			return fmt.Errorf(`you provided multipe 'kind' of tokens, yet specified a filename ... you can't do that
+you should either set one 'kind', or remove 'filename' and the tool will generate a random one for you`)
+		}
+		if cfg.FilesCount != 1 {
+			l.Warn("filename has been specified, but 'count' is not '1' ... setting it to 1")
+			cfg.FilesCount = 1
+		}
+		// extension match kind?
+		e := strings.TrimPrefix(filepath.Ext(cfg.FileName), ".")
+
+		switch cfg.Kinds[0] { // this should be only one
+		case "doc-msword":
+			if e != "docx" {
+				return fmt.Errorf("kind is 'doc-msword', yet the filename provided does not have a .docx extension")
+			}
+		case "msexcel-macro":
+			if e != "xlsm" {
+				return fmt.Errorf("kind is 'msexcel-macro', yet the filename provided does not have a .xlsm extension")
+			}
+		case "msword-macro":
+			if e != "docm" {
+				return fmt.Errorf("kind is 'msword-macro', yet the filename provided does not have a .docm extension")
+			}
+		case "pdf-acrobat-reader":
+			if e != "pdf" {
+				return fmt.Errorf("kind is 'pdf-acrobat-reader', yet the filename provided does not have a .pdf extension")
+			}
+		case "aws-id":
+			if e != "txt" {
+				if e != "" { // no extension?
+					return fmt.Errorf("kind is 'aws-id', yet the filename provided does not have either a .txt extension, or no extension")
+				}
+			}
 		}
 	}
 	return

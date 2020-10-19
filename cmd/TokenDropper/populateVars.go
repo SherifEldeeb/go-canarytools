@@ -15,30 +15,11 @@ we do this so generated tokens better blend in`)
 	flag.StringVar(&cfg.DropWhere, "where", "./", "where to drop Canarytokens?")
 	flag.BoolVar(&cfg.CreateDirectoryIfNotExists, "createdir", true, "Create the directory where tokens should be dropped if it didn't exist?")
 	flag.StringVar(&cfg.KindsStr, "kind", "aws-id,doc-msword", "comma separated list of Canarytokens to be generated")
-	// "apeeper":"EC2 Meta-data Service",
-	// "autoreg-google-docs":"Google Document",
-	// "autoreg-google-sheets":"Google Sheet",
-	// "aws-id":"Amazon API Key",
-	// "aws-s3":"Amazon S3",
-	// "cloned-web":"Cloned Website",
-	// "dns":"DNS",
-	// "doc-msword":"MS Word .docx Document",
-	// "fast-redirect":"Fast HTTP Redirect",
-	// "google-docs":"Google Document",
-	// "google-sheets":"Google Sheet",
-	// "googledocs_factorydoc":"Document Factory",
-	// "googlesheets_factorydoc":"Document Factory",
-	// "http":"Web",
-	// "msexcel-macro":"MS Excel .xlsm Document",
-	// "msword-macro":"MS Word .docm Document",
-	// "office365mail":"Office 365 email token",
-	// "pdf-acrobat-reader":"Acrobat Reader PDF Document",
-	// "qr-code":"QR Code",
-	// "signed-exe":"Signed Exe",
-	// "slack-api":"Slack API Key",
-	// "slow-redirect":"Slow HTTP Redirect",
-	// "web-image":"Remote Web Image",
-	// "windows-dir":"Windows Directory Browsing"
+
+	// filename
+	flag.StringVar(&cfg.FileName, "filename", "", `filename that will be given to the token; if empty a random name will be set.
+setting this will make 'count' to be 'one', and will do some checks to make sure extension matches the 'kind' specified`)
+	flag.BoolVar(&cfg.RandomizeFilenames, "randomize-filenames", true, "add random text to filenames to make them unique")
 	flag.StringVar(&cfg.CustomMemo, "memo", "", `tokens' memo always include 'host', 'user', and 'filename',
 use this flag to add custom text to the Canarytoken memo`)
 	flag.StringVar(&cfg.LogLevel, "loglevel", "info", "set loglevel, can be one of ('info', 'warning', 'debug' or 'trace')")
@@ -58,5 +39,4 @@ use this flag to add custom text to the Canarytoken memo`)
 	// Flock Specific flags
 	flag.StringVar(&cfg.FlockName, "flock", "", "created tokens will be part of this flock 'if empty, will be assigned to the default flock'")
 	flag.BoolVar(&cfg.CreateFlockIfNotExists, "createflock", true, "Create the flock if it doesn't exist? has to be used with '-flock', and is not suported with factory")
-
 }

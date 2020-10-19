@@ -44,6 +44,8 @@ type GeneralTokenDropperConfig struct {
 	CreateFlockIfNotExists     bool     // should we create the flock if it didn't exist?
 	CreateDirectoryIfNotExists bool     // should we create the directory (DropWhere) if it didn't exist?
 	CustomMemo                 string   // custom memo to be added to the default one
+	FileName                   string   // the filename of the token, if this is set, count will be one, and there will be some checks to make sure the extension matchs the kind
+	RandomizeFilenames         bool     // add random text to filenames to make them unique
 }
 
 // ChirpForwarderConfig contains configs for the forwarder

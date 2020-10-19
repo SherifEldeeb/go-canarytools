@@ -11,7 +11,7 @@ import (
 	"github.com/go-logfmt/logfmt"
 )
 
-func GetRandomTokenName(kind string) (name string, err error) {
+func GetRandomTokenName(kind string, randomizeFilename bool) (name string, err error) {
 	var n string // name
 	var e string // ext
 	switch kind {
@@ -34,7 +34,13 @@ func GetRandomTokenName(kind string) (name string, err error) {
 		err = fmt.Errorf("unsupported Canarytoken: %s", kind)
 		return
 	}
-	name = RandomizeName(n, e)
+
+	if randomizeFilename {
+		name = RandomizeName(n, e)
+	} else {
+		name = n + "." + e
+	}
+
 	return
 }
 
