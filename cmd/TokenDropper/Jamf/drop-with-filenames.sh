@@ -65,7 +65,7 @@ do
         sudo -u $target_user ./TokenDropper -count 1 \
             -kind "$kind" \
             -where "$where" \
-            -filename $filename \
+            -filename "$filename" \
             -flock "TokenDropper" \
             -randomize-filenames=false \
             -overwrite-files
