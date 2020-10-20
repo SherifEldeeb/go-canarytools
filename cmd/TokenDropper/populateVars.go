@@ -14,6 +14,7 @@ func populateVarsFromFlags(cfg *canarytools.TokenDropperConfig) {
 we do this so generated tokens better blend in`)
 	flag.StringVar(&cfg.DropWhere, "where", "./", "where to drop Canarytokens?")
 	flag.BoolVar(&cfg.CreateDirectoryIfNotExists, "createdir", true, "Create the directory where tokens should be dropped if it didn't exist?")
+	flag.BoolVar(&cfg.OverwriteFileIfExists, "overwrite-files", false, "Overwrite files if they already exist?")
 	flag.StringVar(&cfg.KindsStr, "kind", "aws-id,doc-msword", "comma separated list of Canarytokens to be generated")
 
 	// filename

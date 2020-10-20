@@ -155,7 +155,7 @@ func main() {
 			}).Debug("Generating Token")
 
 			// drop
-			err = c.DropFileToken(kind, memo, cfg.DropWhere, filename, cfg.FlockID, cfg.CreateFlockIfNotExists, cfg.CreateDirectoryIfNotExists)
+			err = c.DropFileToken(kind, memo, cfg.DropWhere, filename, cfg.FlockID, cfg.CreateFlockIfNotExists, cfg.CreateDirectoryIfNotExists, cfg.OverwriteFileIfExists)
 			if err != nil {
 				l.Error(err)
 				continue

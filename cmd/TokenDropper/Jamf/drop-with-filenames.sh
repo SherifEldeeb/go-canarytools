@@ -65,8 +65,10 @@ do
         sudo -u $target_user ./TokenDropper -count 1 \
             -kind "$kind" \
             -where "$where" \
+            -filename $filename \
             -flock "TokenDropper" \
-            -filename $filename
+            -randomize-filenames=false \
+            -overwrite-files
             2> tokendropper.log
         # Logs printed to stdout are logged to the JAMF console (useful for debugging)
         sudo -u $target_user cat "$work_dir/tokendropper.log"

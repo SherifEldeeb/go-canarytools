@@ -23,7 +23,7 @@ FLOCK="TokenDropper"
 ### Activity Starts here ###
 # This is the JAMF caching location.
 # Jamf Package will be stored locally here...
-DROPPER="/Library/Application Support/JAMF/Waiting Room/tokendropper.zip"
+DROPPER="/Library/Application Support/JAMF/Waiting Room/TokenDropper.zip"
 
 # create a temp workdir for package extraction
 WORK_DIR=$(mktemp -d)

@@ -187,7 +187,7 @@ func (c Client) DeleteCanarytoken(canarytoken string) (err error) {
 }
 
 // DropFileToken drops a file token
-func (c Client) DropFileToken(kind, memo, dropWhere, filename, FlockID string, CreateFlockIfNotExists, CreateDirectoryIfNotExists bool) (err error) {
+func (c Client) DropFileToken(kind, memo, dropWhere, filename, FlockID string, CreateFlockIfNotExists, CreateDirectoryIfNotExists, OverwriteFileIfExists bool) (err error) {
 	c.l.WithFields(log.Fields{
 		"kind":                   kind,
 		"memo":                   memo,
@@ -237,7 +237,11 @@ output=json
 		if errFileExists != nil {
 			return errFileExists
 		}
-		if !exists {
+
+		if !exists || OverwriteFileIfExists {
+			if exists {
+				c.l.WithField("file", fullFilePath).Warn("file exists and will be overwritten! ('-overwrite-files' is set to true)")
+			}
 			// Create the file
 			out, err := os.Create(fullFilePath)
 			if err != nil {
@@ -247,8 +251,9 @@ output=json
 
 			// Write the body to file
 			_, err = out.WriteString(fmt.Sprintf(aswTemplate, tcr.Canarytoken.AccessKeyID, tcr.Canarytoken.SecretAccessKey))
-		} else {
-			return fmt.Errorf("file exists: %s", fullFilePath)
+		}
+		if exists && !OverwriteFileIfExists { // id DOES exist, and you told me not to overwrite
+			return fmt.Errorf("file exists: %s, and '-overwrite-file' is false", fullFilePath)
 		}
 	case "doc-msword", "pdf-acrobat-reader", "msword-macro", "msexcel-macro":
 		tcr, err = c.CreateTokenFromAPI(kind, memo, FlockID, nil)
@@ -259,7 +264,7 @@ output=json
 			err = fmt.Errorf("failed to CreateTokenFromAPI")
 			return
 		}
-		_, err = c.DownloadTokenFromAPI(tcr.Canarytoken.Canarytoken, fullFilePath)
+		_, err = c.DownloadTokenFromAPI(tcr.Canarytoken.Canarytoken, fullFilePath, OverwriteFileIfExists)
 	default:
 		err = fmt.Errorf("unsupported Canarytoken: %s", kind)
 	}
@@ -346,7 +351,7 @@ func (c Client) CreateTokenFromAPI(kind, memo, FlockID string, additionalParams 
 }
 
 // DownloadTokenFromAPI downloads a file-based token given its ID
-func (c Client) DownloadTokenFromAPI(canarytoken, filename string) (n int64, err error) {
+func (c Client) DownloadTokenFromAPI(canarytoken, filename string, OverwriteFileIfExists bool) (n int64, err error) {
 	params := &url.Values{}
 	params.Set("canarytoken", canarytoken)
 
@@ -368,7 +373,10 @@ func (c Client) DownloadTokenFromAPI(canarytoken, filename string) (n int64, err
 	if err != nil {
 		return
 	}
-	if !exists {
+	if !exists || OverwriteFileIfExists {
+		if exists {
+			c.l.WithField("file", filename).Warn("file exists and will be overwritten! ('-overwrite-files' is set to true)")
+		}
 		// Create the file
 		out, err := os.Create(filename)
 		if err != nil {
@@ -378,8 +386,9 @@ func (c Client) DownloadTokenFromAPI(canarytoken, filename string) (n int64, err
 
 		// Write the body to file
 		n, err = io.Copy(out, resp.Body)
-	} else {
-		return 0, fmt.Errorf("file exists: %s", filename)
+	}
+	if exists && !OverwriteFileIfExists { // id DOES exist, and you told me not to overwrite
+		return 0, fmt.Errorf("file exists: %s, and '-overwrite-file' is false", filename)
 	}
 	return
 }
