@@ -65,7 +65,7 @@ foreach ($user in $users) {
 
         $where = Join-Path -Path "$env:HOMEDRIVE" -ChildPath "/Users/" | Join-Path -ChildPath "$user" | Join-Path -ChildPath "$user_dir"
         Write-Host "[*] dropping $filename of $kind token to $user_dir" -ForegroundColor Green
-        Write-Host "[*] Executing: ```Dropper -kind `"$kind`" -where `"$where`" -filename `"$filename`" -flock `"TokenDropper`" -randomize-filenames=false -overwrite-files=true 2>&1``` "
-        & $Dropper -kind `"$kind`" -where `"$where`" -filename `"$filename`" -flock `"TokenDropper`" -randomize-filenames=false -overwrite-files=true2>&1 | ForEach-Object{ "$_" }
+        Write-Host "[*] Executing: ```Dropper -kind `"$kind`" -where `"$where`" -filename `"$filename`" -flock `"TokenDropper`" -randomize-filenames=false -overwrite-files=true``` "
+        & "$Dropper" -kind `"$kind`" -where `"$where`" -filename `"$filename`" -flock `"TokenDropper`" -randomize-filenames=false -overwrite-files=true 2>&1 | ForEach-Object{ "$_" }
     }  
 }

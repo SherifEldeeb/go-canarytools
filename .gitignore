@@ -31,3 +31,4 @@ lastcheck
 cmd/TokenDropper/build.txt
 cmd/TokenDropper/TokenDropper.zip
 cmd/TokenDropper/Jamf/TokenDropper.zip
+build/*/*
