@@ -4,7 +4,7 @@
 
 .NOTES
     Last Edit: 2020-10-20
-    Version 1.0 - initial relea""se
+    Version 1.0 - initial release
 #>
 
 # you can optionally set the full path to the dropper executable here
