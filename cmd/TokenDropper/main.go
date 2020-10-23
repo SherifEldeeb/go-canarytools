@@ -30,6 +30,10 @@ var (
 	APIKEY string
 	// FACTORYAUTH is the factory auth token
 	FACTORYAUTH string
+	// BUILDTIME is the time the tools was built
+	BUILDTIME string
+	// SHA1VER is the built sha1
+	SHA1VER string
 )
 
 func init() {
@@ -38,9 +42,15 @@ func init() {
 }
 
 func main() {
-	flag.Parse()
-	// Set LogLevel
 	l := log.New()
+	l.WithFields(log.Fields{
+		"BUILDTIME": BUILDTIME,
+		"SHA1VER":   SHA1VER,
+	}).Info("starting TokenDropper")
+
+	flag.Parse()
+
+	// Set LogLevel
 	switch cfg.LogLevel {
 	case "info":
 		l.SetLevel(log.InfoLevel)
@@ -241,7 +251,7 @@ func finishConfig(cfg *canarytools.TokenDropperConfig, l *log.Logger) (err error
 	// checks if they specified the filename
 	if cfg.FileName != "" {
 		if cfg.RandomizeFilenames {
-			l.Warn("filename has been specified, but 'randomize-filenames' is not 'true' ... will be setting it to 'false'")
+			l.Warn("filename has been specified, but 'randomize-filenames' is set to 'true' ... will be setting it to 'false'")
 			cfg.RandomizeFilenames = false
 		}
 		if len(cfg.Kinds) > 1 {
