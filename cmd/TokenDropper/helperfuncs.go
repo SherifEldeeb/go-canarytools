@@ -30,6 +30,10 @@ func GetRandomTokenName(kind string, randomizeFilename bool) (name string, err e
 	case "msexcel-macro":
 		n = pick(fileNames)
 		e = "xlsm"
+	case "windows-dir":
+		// windir do not have extentions
+		name = pick(windirFileNames)
+		return
 	default:
 		err = fmt.Errorf("unsupported Canarytoken: %s", kind)
 		return

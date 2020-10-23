@@ -164,6 +164,10 @@ func main() {
 			fullFilePath := filepath.Join(cfg.DropWhere, filename)
 
 			rtime := GetRandomDate(cfg.RandYearsBack)
+			l.WithFields(log.Fields{
+				"fullFilePath": fullFilePath,
+				"fake_time":    rtime.UTC().String(),
+			}).Debug("changing timestamps")
 			err = os.Chtimes(fullFilePath, rtime, rtime)
 			if err != nil {
 				l.WithFields(log.Fields{

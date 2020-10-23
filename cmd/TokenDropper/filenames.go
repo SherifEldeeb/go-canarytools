@@ -87,4 +87,14 @@ var awsFileNames = []string{
 	"aws_creds",
 	"aws_root",
 	"auth_keys",
+	"new_user_credentials",
+}
+
+var windirFileNames = []string{
+	"Full Backup",
+	"Servers Login",
+	"Cloud Credentials",
+	"Secret Keeper",
+	"Payroll Data",
+	"Database Backup",
 }

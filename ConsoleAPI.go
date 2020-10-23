@@ -217,6 +217,58 @@ func (c Client) DropFileToken(kind, memo, dropWhere, filename, FlockID string, C
 
 	var tcr = TokenCreateResponse{}
 	switch kind {
+	case "windows-dir":
+		tcr, err = c.CreateTokenFromAPI(kind, memo, FlockID, nil)
+		if err != nil {
+			return
+		}
+		if tcr.Result != "success" {
+			err = fmt.Errorf("failed to CreateTokenFromAPI")
+			return
+		}
+		fullFilePath = fullFilePath + ".zip"
+		_, err = c.DownloadTokenFromAPI(tcr.Canarytoken.Canarytoken, fullFilePath, OverwriteFileIfExists)
+		if err != nil {
+			return
+		}
+		// we now have a zip file in the location specified
+		// we need to unzip it.
+		c.l.WithFields(log.Fields{
+			"file":  fullFilePath,
+			"where": dropWhere,
+		}).Info("unzipping windows-dir Canarytoken")
+		filenames, err := Unzip(fullFilePath, dropWhere)
+		if err != nil {
+			return err
+		}
+		for _, filename := range filenames {
+			c.l.WithField("file", filename).Debug("file extracted from zip")
+		}
+		oldpath := filepath.Join(dropWhere, "My Documents")
+		newfoldername := strings.TrimSuffix(filename, ".zip")
+		// newpath := filepath.Join(oldpath, newfoldername)
+
+		c.l.WithFields(log.Fields{
+			"oldpath":       oldpath,
+			"newfoldername": newfoldername,
+			// "newpath":       newpath,
+		}).Debug("renaming default windows-dir default directory")
+
+		// chrck if new folder does not already exist
+		exists, errFileExists := fileExists(newfoldername)
+		if errFileExists != nil {
+			return errFileExists
+		}
+		if !exists || OverwriteFileIfExists {
+			err = os.Rename(oldpath, newfoldername)
+			if err != nil {
+				return err
+			}
+		}
+		err = os.Remove(fullFilePath)
+		if err != nil {
+			return err
+		}
 	case "aws-id":
 		tcr, err = c.CreateTokenFromAPI(kind, memo, FlockID, nil)
 		if err != nil {
@@ -387,7 +439,7 @@ func (c Client) DownloadTokenFromAPI(canarytoken, filename string, OverwriteFile
 		// Write the body to file
 		n, err = io.Copy(out, resp.Body)
 	}
-	if exists && !OverwriteFileIfExists { // id DOES exist, and you told me not to overwrite
+	if exists && !OverwriteFileIfExists { // it DOES exist, and you told me not to overwrite
 		return 0, fmt.Errorf("file exists: %s, and '-overwrite-file' is false", filename)
 	}
 	return
