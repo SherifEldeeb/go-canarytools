@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -213,7 +214,7 @@ func (c Client) DropFileToken(kind, memo, dropWhere, filename, FlockID string, C
 		}
 	}
 
-	fullFilePath := filepath.Join(dropWhere, filename)
+	fullTokenPath := filepath.Join(dropWhere, filename)
 
 	var tcr = TokenCreateResponse{}
 	switch kind {
@@ -226,48 +227,9 @@ func (c Client) DropFileToken(kind, memo, dropWhere, filename, FlockID string, C
 			err = fmt.Errorf("failed to CreateTokenFromAPI")
 			return
 		}
-		fullFilePath = fullFilePath + ".zip"
-		_, err = c.DownloadTokenFromAPI(tcr.Canarytoken.Canarytoken, fullFilePath, OverwriteFileIfExists)
+		_, err = c.DownloadWindowsDirTokenFromAPI(tcr.Canarytoken.Canarytoken, dropWhere, filename, OverwriteFileIfExists)
 		if err != nil {
 			return
-		}
-		// we now have a zip file in the location specified
-		// we need to unzip it.
-		c.l.WithFields(log.Fields{
-			"file":  fullFilePath,
-			"where": dropWhere,
-		}).Info("unzipping windows-dir Canarytoken")
-		filenames, err := Unzip(fullFilePath, dropWhere)
-		if err != nil {
-			return err
-		}
-		for _, filename := range filenames {
-			c.l.WithField("file", filename).Debug("file extracted from zip")
-		}
-		oldpath := filepath.Join(dropWhere, "My Documents")
-		newfoldername := strings.TrimSuffix(filename, ".zip")
-		// newpath := filepath.Join(oldpath, newfoldername)
-
-		c.l.WithFields(log.Fields{
-			"oldpath":       oldpath,
-			"newfoldername": newfoldername,
-			// "newpath":       newpath,
-		}).Debug("renaming default windows-dir default directory")
-
-		// chrck if new folder does not already exist
-		exists, errFileExists := fileExists(newfoldername)
-		if errFileExists != nil {
-			return errFileExists
-		}
-		if !exists || OverwriteFileIfExists {
-			err = os.Rename(oldpath, newfoldername)
-			if err != nil {
-				return err
-			}
-		}
-		err = os.Remove(fullFilePath)
-		if err != nil {
-			return err
 		}
 	case "aws-id":
 		tcr, err = c.CreateTokenFromAPI(kind, memo, FlockID, nil)
@@ -285,17 +247,17 @@ region=us-east-2
 output=json 
 `
 		// simple checks
-		exists, errFileExists := fileExists(fullFilePath)
+		exists, errFileExists := fileExists(fullTokenPath)
 		if errFileExists != nil {
 			return errFileExists
 		}
 
 		if !exists || OverwriteFileIfExists {
 			if exists {
-				c.l.WithField("file", fullFilePath).Warn("file exists and will be overwritten! ('-overwrite-files' is set to true)")
+				c.l.WithField("file", fullTokenPath).Warn("file exists and will be overwritten! ('-overwrite-files' is set to true)")
 			}
 			// Create the file
-			out, err := os.Create(fullFilePath)
+			out, err := os.Create(fullTokenPath)
 			if err != nil {
 				return err
 			}
@@ -305,7 +267,7 @@ output=json
 			_, err = out.WriteString(fmt.Sprintf(aswTemplate, tcr.Canarytoken.AccessKeyID, tcr.Canarytoken.SecretAccessKey))
 		}
 		if exists && !OverwriteFileIfExists { // id DOES exist, and you told me not to overwrite
-			return fmt.Errorf("file exists: %s, and '-overwrite-file' is false", fullFilePath)
+			return fmt.Errorf("file exists: %s, and '-overwrite-file' is false", fullTokenPath)
 		}
 	case "doc-msword", "pdf-acrobat-reader", "msword-macro", "msexcel-macro":
 		tcr, err = c.CreateTokenFromAPI(kind, memo, FlockID, nil)
@@ -316,7 +278,7 @@ output=json
 			err = fmt.Errorf("failed to CreateTokenFromAPI")
 			return
 		}
-		_, err = c.DownloadTokenFromAPI(tcr.Canarytoken.Canarytoken, fullFilePath, OverwriteFileIfExists)
+		_, err = c.DownloadTokenFromAPI(tcr.Canarytoken.Canarytoken, fullTokenPath, OverwriteFileIfExists)
 	default:
 		err = fmt.Errorf("unsupported Canarytoken: %s", kind)
 	}
@@ -399,6 +361,82 @@ func (c Client) CreateTokenFromAPI(kind, memo, FlockID string, additionalParams 
 	if tokencreateresponse.Result != "success" {
 		err = fmt.Errorf("error creating token: %s", err)
 	}
+	return
+}
+
+func (c Client) DownloadWindowsDirTokenFromAPI(canarytoken, dropWhere, filename string, OverwriteFileIfExists bool) (n int64, err error) {
+	params := &url.Values{}
+	params.Set("canarytoken", canarytoken)
+
+	fullURL, err := c.api("canarytoken/download", params)
+	if err != nil {
+		return
+	}
+	resp, err := c.httpclient.Get(fullURL.String())
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return 0, fmt.Errorf("DownloadTokenFromAPI returned: %d", resp.StatusCode)
+	}
+
+	// create temp folder
+	tmpdir, err := ioutil.TempDir("", "tokendropper")
+	if err != nil {
+		return 0, err
+	}
+	defer os.RemoveAll(tmpdir)
+	tmpFilename := filepath.Join(tmpdir, filename+".zip")
+	// Create the file
+	out, err := os.Create(tmpFilename)
+	if err != nil {
+		return 0, err
+	}
+	defer out.Close()
+	n, err = io.Copy(out, resp.Body)
+	if err != nil {
+		return
+	}
+	// now we have the zip file in a temp folder
+	// we need to unzip it.
+	c.l.WithFields(log.Fields{
+		"tmpFilename": tmpFilename,
+		"tmpdir":      tmpdir,
+	}).Debug("unzipping windows-dir Canarytoken")
+	filenames, err := Unzip(tmpFilename, tmpdir)
+	if err != nil {
+		return
+	}
+	for _, filename := range filenames {
+		c.l.WithField("file", filename).Debug("file extracted from zip")
+	}
+	oldpath := filepath.Join(tmpdir, "My Documents")
+	newfoldername := filename
+	// newpath := filepath.Join(oldpath, newfoldername)
+
+	// full path of token
+	tokenFullDirPath := filepath.Join(dropWhere, filename)
+	c.l.WithFields(log.Fields{
+		"oldpath":          oldpath,
+		"newfoldername":    newfoldername,
+		"tokenFullDirPath": tokenFullDirPath,
+		// "newpath":       newpath,
+	}).Debug("renaming default windows-dir default directory")
+
+	// check if new folder does not already exist
+	exists, err := fileExists(tokenFullDirPath)
+	if err != nil {
+		return
+	}
+	if !exists || OverwriteFileIfExists {
+		err = os.Rename(oldpath, tokenFullDirPath)
+		if err != nil {
+			return
+		}
+	}
+	// defer shoud take or of cleaning up the tmpdir
 	return
 }
 

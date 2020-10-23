@@ -31,9 +31,9 @@ func GetRandomTokenName(kind string, randomizeFilename bool) (name string, err e
 		n = pick(fileNames)
 		e = "xlsm"
 	case "windows-dir":
-		// windir do not have extentions
-		name = pick(windirFileNames)
-		return
+		n = pick(windirFileNames)
+		// windows-dir do not have extentions
+		e = ""
 	default:
 		err = fmt.Errorf("unsupported Canarytoken: %s", kind)
 		return
@@ -42,7 +42,12 @@ func GetRandomTokenName(kind string, randomizeFilename bool) (name string, err e
 	if randomizeFilename {
 		name = RandomizeName(n, e)
 	} else {
-		name = n + "." + e
+		switch e {
+		case "":
+			name = n
+		default:
+			name = n + "." + e
+		}
 	}
 
 	return

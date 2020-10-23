@@ -44,7 +44,6 @@ var fileNames = []string{
 	"Master Inventory",
 	"Master_Password_Sheet",
 	"MASTERS - User List NO PASSWORDS",
-	"McAfeepassword",
 	"MerchandisingSetup - ID and Password info",
 	"My Passwords",
 	"NETWORK A R REPORT PASSWORD",
