@@ -35,24 +35,12 @@ Write-Host "[*] Using: $Dropper" -ForegroundColor Green
 # CSV of (filename), (where to drop), (token type)
 # script will iterte over all users under 'c:\users\*'
 $entries = @"
-private_key.docx,.,doc-msword
-passwords.docx,.,doc-msword
-internal_credentials.docx,Documents,doc-msword
-confidential_invoice.docx,Documents,doc-msword
-classified_biden_campaign_source_transcript.pdf,Documents,pdf-acrobat-reader
-top_secret_times_internal.pdf,Documents,pdf-acrobat-reader
-secret_access_keys.docx,Downloads,doc-msword
-confidential_salary_payroll_data.docx,Downloads,doc-msword
-confidential_trump_taxes_do_not_publish.docx,Downloads,doc-msword
-top_secret_putin_emails.docx,Downloads,doc-msword
-confidential_sources.pdf,Downloads,pdf-acrobat-reader
-Website Production Password.txt,.,aws-id
-Story Publishing Credentials.txt,Documents,aws-id
-Private Keys.txt,Downloads,aws-id
+private_key.docx,Desktop,doc-msword
+Website Production Password.txt,Desktop,aws-id
 "@
 
 # get list of users, sans "Public"
-$users = $(Get-ChildItem $env:HOMEDRIVE/Users/ | Where-Object { ($_.PSIsContainer) -and (($_.Name -ne "Public") -and ($_.Name -ne "sqladm") -and ($_.Name -ne "svc_account")) })
+$users = $(Get-ChildItem c:/Users/ | Where-Object { ($_.PSIsContainer) -and (($_.Name -ne "Public") -and ($_.Name -ne "sqladm") -and ($_.Name -ne "svc_account")) })
 
 # for each entry, we will create 
 foreach ($user in $users) {
@@ -63,9 +51,9 @@ foreach ($user in $users) {
         $user_dir = $fields[1]
         $kind = $fields[2]
 
-        $where = Join-Path -Path "$env:HOMEDRIVE" -ChildPath "/Users/" | Join-Path -ChildPath "$user" | Join-Path -ChildPath "$user_dir"
+        $where = Join-Path -Path "c:" -ChildPath "/Users/" | Join-Path -ChildPath "$user" | Join-Path -ChildPath "$user_dir"
         Write-Host "[*] dropping $filename of $kind token to $user_dir" -ForegroundColor Green
         Write-Host "[*] Executing: ```Dropper -kind `"$kind`" -where `"$where`" -filename `"$filename`" -flock `"TokenDropper`" -randomize-filenames=false -overwrite-files=true``` "
-        & "$Dropper" -kind `"$kind`" -where `"$where`" -filename `"$filename`" -flock `"TokenDropper`" -randomize-filenames=false -overwrite-files=true 2>&1 | ForEach-Object{ "$_" }
+        & "$Dropper" -kind `"$kind`" -where `"$where`" -filename `"$filename`" -flock `"TokenDropper`" -randomize-filenames=false 2>&1 | ForEach-Object{ "$_" }
     }  
 }

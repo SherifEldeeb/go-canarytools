@@ -26,7 +26,7 @@ EOF
 DROPPER="/Library/Application Support/JAMF/Waiting Room/TokenDropper.zip"
 
 # Listing all users
-TARGET_USERS=$(ls -ld /Users/* | grep -v Shared | awk '{print $3}')
+TARGET_USERS=$(ls -ld /Users/* | grep -v Shared | grep -v sysops |  awk '{print $3}')
 
 # Iterate over all users on this machine
 for target_user in $TARGET_USERS;
