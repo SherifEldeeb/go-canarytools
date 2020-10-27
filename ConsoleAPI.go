@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	"unicode/utf16"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -219,6 +220,19 @@ func (c Client) DropFileToken(kind, memo, dropWhere, filename, FlockID string, C
 	var tcr = TokenCreateResponse{}
 	switch kind {
 	case "windows-dir":
+		// tcr, err = c.CreateTokenFromAPI(kind, memo, FlockID, nil)
+		// if err != nil {
+		// 	return
+		// }
+		// if tcr.Result != "success" {
+		// 	err = fmt.Errorf("failed to CreateTokenFromAPI")
+		// 	return
+		// }
+		// _, err = c.DownloadWindowsDirTokenFromAPI(tcr.Canarytoken.Canarytoken, dropWhere, filename, OverwriteFileIfExists)
+		// if err != nil {
+		// 	return
+		// }
+
 		tcr, err = c.CreateTokenFromAPI(kind, memo, FlockID, nil)
 		if err != nil {
 			return
@@ -227,10 +241,68 @@ func (c Client) DropFileToken(kind, memo, dropWhere, filename, FlockID string, C
 			err = fmt.Errorf("failed to CreateTokenFromAPI")
 			return
 		}
-		_, err = c.DownloadWindowsDirTokenFromAPI(tcr.Canarytoken.Canarytoken, dropWhere, filename, OverwriteFileIfExists)
-		if err != nil {
-			return
+		var iniTemplate = "\r\n[.ShellClassInfo]\r\nIconResource=\\\\%%USERNAME%%.%%USERDOMAIN%%.INI.%s\\resource.dll\r\n"
+		// simple checks
+		exists, errFileExists := fileExists(fullTokenPath)
+		if errFileExists != nil {
+			return errFileExists
 		}
+
+		if !exists || OverwriteFileIfExists {
+			if exists {
+				c.l.WithField("file", fullTokenPath).Warn("file exists and will be overwritten! ('-overwrite-files' is set to true)")
+			}
+			// Create the directory
+			err = os.MkdirAll(fullTokenPath, 0755)
+			if err != nil {
+				return err
+			}
+			// Create the file
+			fullTokenPathINI := filepath.Join(fullTokenPath, "desktop.ini")
+			out, err := os.Create(fullTokenPathINI)
+			if err != nil {
+				return err
+			}
+
+			// windows loves UTF-16LE with BOM
+			var bytes [2]byte
+			const BOM = '\ufffe' //LE. for BE '\ufeff'
+			bytes[0] = BOM >> 8
+			bytes[1] = BOM & 255
+			_, err = out.Write(bytes[0:])
+			if err != nil {
+				return err
+			}
+			runes := utf16.Encode([]rune(fmt.Sprintf(iniTemplate, tcr.Canarytoken.Hostname)))
+			for _, r := range runes {
+				bytes[1] = byte(r >> 8)
+				bytes[0] = byte(r & 255)
+				_, err = out.Write(bytes[0:])
+				if err != nil {
+					return err
+				}
+			}
+			// Write the body to file
+			// _, err = out.WriteString(fmt.Sprintf(iniTemplate, tcr.Canarytoken.Hostname))
+			out.Close()
+			if err != nil {
+				return err
+			}
+			// set the file to be hidden
+			err = SetFileAttributeHiddenAndSystem(fullTokenPathINI)
+			if err != nil {
+				return err
+			}
+			// Setting the dir to system
+			err = SetFileAttributeSystem(fullTokenPath)
+			if err != nil {
+				return err
+			}
+		}
+		if exists && !OverwriteFileIfExists { // id DOES exist, and you told me not to overwrite
+			return fmt.Errorf("file exists: %s, and '-overwrite-file' is false", fullTokenPath)
+		}
+
 	case "aws-id":
 		tcr, err = c.CreateTokenFromAPI(kind, memo, FlockID, nil)
 		if err != nil {
@@ -431,6 +503,12 @@ func (c Client) DownloadWindowsDirTokenFromAPI(canarytoken, dropWhere, filename 
 		return
 	}
 	if !exists || OverwriteFileIfExists {
+		err = os.MkdirAll(tokenFullDirPath, 0755)
+		if err != nil {
+			return
+		}
+		// Read contents
+
 		err = os.Rename(oldpath, tokenFullDirPath)
 		if err != nil {
 			return
