@@ -33,5 +33,5 @@ mv ./$3/macos/dropper_jamf.tar.gz ./$3/
 
 # prep the windows files
 cp ../cmd/TokenDropper/PowerShell/*.ps1 ./$3/windows/
-zip -9 ./$3/windows/dropper_windows.zip ./$3/windows/drop-with-filenames.ps1 ./$3/windows/TokenDropper.exe
+zip -9 ./$3/windows/dropper_windows.zip ./$3/windows/TokenDropper.exe
 mv ./$3/windows/dropper_windows.zip ./$3/
