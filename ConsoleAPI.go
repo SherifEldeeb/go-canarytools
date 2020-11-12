@@ -145,7 +145,7 @@ func (c Client) GetFlockSummary(flockid string) (flocksummaryresponse FlockSumma
 func NewClient(domain, authtoken, opmode string, l *log.Logger) (c *Client, err error) {
 	c = &Client{}
 	c.l = l
-	c.httpclient = &http.Client{Timeout: 10 * time.Second}
+	c.httpclient = &http.Client{Timeout: 180 * time.Second}
 	c.domain = domain
 	c.opmode = opmode
 	switch c.opmode {
