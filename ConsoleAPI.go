@@ -113,12 +113,12 @@ func (c Client) FlockIDExists(flockid string) (exists bool, err error) {
 // GetFlocksSummary returns summary for all flocks
 func (c Client) GetFlocksSummary() (flocksSummaryResponse FlocksSummaryResponse, err error) {
 	flocksSummaryResponse = FlocksSummaryResponse{}
-	err = c.decodeResponse("flocks/summary", "GET", nil, &flocksSummaryResponse)
-	if err != nil {
-		return
+	errJsonDecode := c.decodeResponse("flocks/summary", "GET", nil, &flocksSummaryResponse)
+	if errJsonDecode != nil {
+		c.l.Debugf("error decoding JSON response (shouldn't be a big problem, unless we fail the next check): %s", errJsonDecode)
 	}
 	if flocksSummaryResponse.Result != "success" {
-		err = fmt.Errorf(flocksSummaryResponse.Message)
+		err = fmt.Errorf("error getting flocks summary: %s", flocksSummaryResponse.Message)
 	}
 	return
 }
