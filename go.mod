@@ -5,6 +5,7 @@ go 1.14
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/Shopify/sarama v1.26.3
+	github.com/aws/aws-sdk-go v1.34.31
 	github.com/elastic/go-elasticsearch/v7 v7.6.0
 	github.com/go-logfmt/logfmt v0.5.0
 	github.com/klauspost/compress v1.10.5 // indirect
