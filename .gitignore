@@ -28,4 +28,9 @@ cmd/TokenDropper/test/
 cmd/ChirpForwarder/ChirpForwarder
 cmd/TokenDropper/TokenDropper
 lastcheck
-TokenDropper
+cmd/TokenDropper/build.txt
+cmd/TokenDropper/TokenDropper.zip
+cmd/TokenDropper/Jamf/TokenDropper.zip
+build/*/*
+cmd/TokenDropper/dump.rdb
+cmd/PokeCanary/canaries.txt

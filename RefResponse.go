@@ -178,3 +178,10 @@ type FlockCreateResponse struct {
 	FlockID string `json:"flock_id,omitempty"`
 	Result  string `json:"result,omitempty"`
 }
+
+// CreateFactoryResponse is the response received by
+type CreateFactoryResponse struct {
+	FactoryAuth string `json:"factory_auth,omitempty"`
+	FactoryURL  string `json:"factory_url,omitempty"`
+	Result      string `json:"result,omitempty"`
+}

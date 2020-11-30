@@ -5,12 +5,13 @@ import (
 	"math/rand"
 	"os"
 	"os/user"
+	"runtime"
 	"time"
 
 	"github.com/go-logfmt/logfmt"
 )
 
-func GetRandomTokenName(kind string) (name string, err error) {
+func GetRandomTokenName(kind string, randomizeFilename bool) (name string, err error) {
 	var n string // name
 	var e string // ext
 	switch kind {
@@ -29,17 +30,32 @@ func GetRandomTokenName(kind string) (name string, err error) {
 	case "msexcel-macro":
 		n = pick(fileNames)
 		e = "xlsm"
+	case "windows-dir":
+		n = pick(windirFileNames)
+		// windows-dir do not have extentions
+		e = ""
 	default:
 		err = fmt.Errorf("unsupported Canarytoken: %s", kind)
 		return
 	}
-	name = RandomizeName(n, e)
+
+	if randomizeFilename {
+		name = RandomizeName(n, e)
+	} else {
+		switch e {
+		case "":
+			name = n
+		default:
+			name = n + "." + e
+		}
+	}
+
 	return
 }
 
 // CreateMemo creates a meaningful memo to be included during Canarytoken creation
 // value is logfmt encoded for easier processing
-func CreateMemo(filename, customMemo string) (memo string, err error) {
+func CreateMemo(filename, dropWhere, customMemo string) (memo string, err error) {
 	keyVals := []interface{}{
 		"Generator", "TokenDropper",
 	}
@@ -56,17 +72,23 @@ func CreateMemo(filename, customMemo string) (memo string, err error) {
 	if err != nil {
 		return
 	}
-	keyVals = append(keyVals, "Username", u.Username)
+	keyVals = append(keyVals, "TD-User", u.Username)
 
 	// Get Hostname
 	hn, err := os.Hostname()
 	if err != nil {
 		return
 	}
-	keyVals = append(keyVals, "Hostname", hn)
+	keyVals = append(keyVals, "TD-Host", hn)
 
 	// Add original filename
 	keyVals = append(keyVals, "OriginalFilename", filename)
+
+	// Add 'where' this token has been dropped
+	keyVals = append(keyVals, "Where", dropWhere)
+
+	// Add 'OS' where this token has been dropped
+	keyVals = append(keyVals, "TD-OS", runtime.GOOS)
 
 	lf, err := logfmt.MarshalKeyvals(keyVals...)
 	if err != nil {
@@ -151,35 +173,3 @@ func GetRandomDateString(years int) (t string) {
 func pick(s []string) string {
 	return s[rand.Intn(len(s))]
 }
-
-// 	case "http", "dns", "cloned-web", "doc-msword", "web-image", "windows-dir", "aws-s3", "pdf-acrobat-reader", "msword-macro", "msexcel-macro", "aws-id", "apeeper", "qr-code", "svn", "sql", "fast-redirect", "slow-redirect":
-// t, err := c.CreateTokenFromAPI("dns", "koko dns", "", nil)
-// if err != nil {
-// 	l.Fatal(err)
-// }
-
-// n, err := c.DownloadTokenFromAPI(t.Canarytoken.Canarytoken, "hamada.docx")
-// if err != nil {
-// 	l.Fatal(err)
-// }
-// l.Infof("written %d bytes", n)
-
-// // get flocks
-// flockssummary, err := c.GetFlocksSummary()
-// if err != nil {
-// 	l.Fatal(err)
-// }
-// for fid, summary := range flockssummary.FlocksSummary {
-// 	l.Infof("%s:%s", fid, summary.Name)
-// 	test_flock_id, err := c.GetFlockIDFromName(summary.Name)
-// 	if err != nil {
-// 		l.Fatal(err)
-// 	}
-// 	test_flock_name, err := c.GetFlockNameFromID(fid)
-// 	if err != nil {
-// 		l.Fatal(err)
-// 	}
-// 	l.Infof("[func] %s:%s", test_flock_name, test_flock_id)
-// }
-// flock:e5d3b65df5438f1b285692ff3c705571
-// flock_id, err :=  c.GetFlockIDFromName("Default Flock")

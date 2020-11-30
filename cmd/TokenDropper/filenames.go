@@ -44,7 +44,6 @@ var fileNames = []string{
 	"Master Inventory",
 	"Master_Password_Sheet",
 	"MASTERS - User List NO PASSWORDS",
-	"McAfeepassword",
 	"MerchandisingSetup - ID and Password info",
 	"My Passwords",
 	"NETWORK A R REPORT PASSWORD",
@@ -87,4 +86,14 @@ var awsFileNames = []string{
 	"aws_creds",
 	"aws_root",
 	"auth_keys",
+	"new_user_credentials",
+}
+
+var windirFileNames = []string{
+	"Full Backup",
+	"Servers Login",
+	"Cloud Credentials",
+	"Secret Keeper",
+	"Payroll Data",
+	"Database Backup",
 }

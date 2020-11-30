@@ -60,12 +60,12 @@ func (cf *ChirpForwarder) setFeeder() {
 	switch cf.cfg.FeederModule {
 	case "consoleapi":
 		// did you specify both token file && manually using apikey+domain?
-		if cf.cfg.ImConsoleTokenFile != "" && (cf.cfg.ImConsoleAPIDomain != "" || cf.cfg.ImConsoleAPIKey != "") {
+		if cf.cfg.ConsoleTokenFile != "" && (cf.cfg.ConsoleAPIDomain != "" || cf.cfg.ConsoleAPIKey != "") {
 			cf.l.Fatal("look, you either use 'tokenfile' or 'apikey+domain', not both")
 		}
 		// so, what if token file is not specfied, but neither apikey+domain?
 		// we'll look for the "canarytools.config" file in user's home directory
-		if cf.cfg.ImConsoleTokenFile == "" && cf.cfg.ImConsoleAPIDomain == "" && cf.cfg.ImConsoleAPIKey == "" {
+		if cf.cfg.ConsoleTokenFile == "" && cf.cfg.ConsoleAPIDomain == "" && cf.cfg.ConsoleAPIKey == "" {
 			cf.l.Warn("none of 'tokenfile', 'apikey' & 'domain' has been provided! will look for 'canarytools.config' file in user's home directory")
 			u, err := user.Current()
 			if err != nil {
@@ -73,45 +73,45 @@ func (cf *ChirpForwarder) setFeeder() {
 					"err": err,
 				}).Fatal("error getting current user")
 			}
-			cf.cfg.ImConsoleTokenFile = path.Join(u.HomeDir, "canarytools.config")
-			cf.l.WithField("path", cf.cfg.ImConsoleTokenFile).Warn("automatically looking for canarytools.config")
-			if _, err := os.Stat(cf.cfg.ImConsoleTokenFile); os.IsNotExist(err) {
+			cf.cfg.ConsoleTokenFile = path.Join(u.HomeDir, "canarytools.config")
+			cf.l.WithField("path", cf.cfg.ConsoleTokenFile).Warn("automatically looking for canarytools.config")
+			if _, err := os.Stat(cf.cfg.ConsoleTokenFile); os.IsNotExist(err) {
 				cf.l.Fatal("couldn't get apikey+domain! provide using environment variables, command line flags, or path to token file")
 			}
 		}
 		// tokenfile specified? get values from there
-		if cf.cfg.ImConsoleTokenFile != "" {
-			cf.cfg.ImConsoleAPIKey, cf.cfg.ImConsoleAPIDomain, err = LoadTokenFile(cf.cfg.ImConsoleTokenFile)
-			if err != nil || cf.cfg.ImConsoleAPIDomain == "" || cf.cfg.ImConsoleAPIKey == "" {
+		if cf.cfg.ConsoleTokenFile != "" {
+			cf.cfg.ConsoleAPIKey, cf.cfg.ConsoleAPIDomain, err = LoadTokenFile(cf.cfg.ConsoleTokenFile)
+			if err != nil || cf.cfg.ConsoleAPIDomain == "" || cf.cfg.ConsoleAPIKey == "" {
 				cf.l.WithFields(log.Fields{
 					"err":    err,
-					"api":    cf.cfg.ImConsoleAPIKey,
-					"domain": cf.cfg.ImConsoleAPIDomain,
+					"api":    cf.cfg.ConsoleAPIKey,
+					"domain": cf.cfg.ConsoleAPIDomain,
 				}).Fatal("error parsing token file")
 			}
 			cf.l.WithFields(log.Fields{
-				"path":   cf.cfg.ImConsoleTokenFile,
-				"api":    cf.cfg.ImConsoleAPIKey,
-				"domain": cf.cfg.ImConsoleAPIDomain,
+				"path":   cf.cfg.ConsoleTokenFile,
+				"api":    cf.cfg.ConsoleAPIKey,
+				"domain": cf.cfg.ConsoleAPIDomain,
 			}).Info("successfully parsed token file, using values from there")
 		}
 		// few checks
-		if len(cf.cfg.ImConsoleAPIKey) != 32 {
+		if len(cf.cfg.ConsoleAPIKey) != 32 {
 			cf.l.Fatal("invalid API Key (length != 32)")
 		}
-		if cf.cfg.ImConsoleAPIDomain == "" {
+		if cf.cfg.ConsoleAPIDomain == "" {
 			cf.l.Fatal("domain must be provided")
 		}
 		////////////////////
 		// start...
 		cf.l.WithFields(log.Fields{
-			"domain":                 cf.cfg.ImConsoleAPIDomain,
-			"cf.cfg.ImConsoleAPIKey": (cf.cfg.ImConsoleAPIKey)[0:4] + "..." + (cf.cfg.ImConsoleAPIKey)[len(cf.cfg.ImConsoleAPIKey)-4:len(cf.cfg.ImConsoleAPIKey)],
+			"domain":                 cf.cfg.ConsoleAPIDomain,
+			"cf.cfg.ConsoleAPIKey": (cf.cfg.ConsoleAPIKey)[0:4] + "..." + (cf.cfg.ConsoleAPIKey)[len(cf.cfg.ConsoleAPIKey)-4:len(cf.cfg.ConsoleAPIKey)],
 		}).Info("ChirpForwarder Configs")
 
 		// building a new client, testing connection...
 		cf.l.Debug("building new client and pinging console")
-		c, err := NewConsoleAPIFeeder(cf.cfg.ImConsoleAPIDomain, cf.cfg.ImConsoleAPIKey, cf.cfg.ThenWhat, cf.cfg.SinceWhenString, cf.cfg.WhichIncidents, cf.cfg.FlockName, cf.cfg.ImConsoleAPIFetchInterval, cf.l)
+		c, err := NewConsoleAPIFeeder(cf.cfg.ConsoleAPIDomain, cf.cfg.ConsoleAPIKey, cf.cfg.ThenWhat, cf.cfg.SinceWhenString, cf.cfg.WhichIncidents, cf.cfg.FlockName, cf.cfg.ConsoleAPIFetchInterval, cf.l)
 		if err != nil {
 			cf.l.WithFields(log.Fields{
 				"err": err,

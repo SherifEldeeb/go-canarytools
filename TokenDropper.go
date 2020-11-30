@@ -19,13 +19,13 @@ type TokenDropper struct {
 // it will check for valid configs, and establish a connection to the console.
 func NewTokenDropper(cfg TokenDropperConfig, l *log.Logger) (tdropper TokenDropper, err error) {
 	tdropper.cfg = cfg
-	c, err := NewClient(cfg.ImConsoleAPIDomain, cfg.ImConsoleAPIKey, l)
+	c, err := NewClient(cfg.ConsoleAPIDomain, cfg.ConsoleAPIKey, cfg.OpMode, l)
 	if err != nil {
 		return
 	}
+
 	tdropper.C = c
 	tdropper.l = l
 
-	err = c.Ping()
 	return
 }

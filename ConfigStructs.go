@@ -4,12 +4,23 @@ import "crypto/tls"
 
 // ConsoleAPIConfig contains configs for Console API input module
 type ConsoleAPIConfig struct {
-	// Console API input module
-	ImConsoleAPIKey    string // CANARY_APIKEY
-	ImConsoleAPIDomain string // CANARY_DOMAIN
-	ImConsoleTokenFile string // CANARY_TOKENFILE
+	// Console domain hash
+	ConsoleAPIDomain string // CANARY_DOMAIN
+
+	// if using console API (can't be used with factory)
+	ConsoleAPIKey    string // CANARY_APIKEY
+	ConsoleTokenFile string // CANARY_TOKENFILE
+
+	// if using factory auth (can't be used with console api)
+	ConsoleFactoryAuth string // CANARY_FACTORYAUTH
+	FactoryAuthFile    string // CANARY_FACTORYAUTHFILE
+
+	// OpMode can be "api" or "factory"
+	// this should be automatically set by NewClient
+	OpMode string
+
 	// TODO: Move to consoleAPIFeeder
-	ImConsoleAPIFetchInterval int // CANARY_INTERVAL
+	ConsoleAPIFetchInterval int // CANARY_INTERVAL
 }
 
 // TokenDropperConfig contains configs for the TokenDropper
@@ -21,18 +32,21 @@ type TokenDropperConfig struct {
 // GeneralTokenDropperConfig contains general configs for TokenDropper
 type GeneralTokenDropperConfig struct {
 	// General flags
-	FilesCount             int      // number of files per directory
-	RandYearsBack          int      // Randomize dates between Now() and 'years' back
-	LocalTokenProxy        bool     // start as a local token proxy?
-	FactoryAuth            string   // Token Factory auth string
-	DropWhere              string   // where to drop tokens?
-	KindsStr               string   // comma-separated string with what kind of tokens to drop
-	Kinds                  []string // what kind of tokens to drop
-	LogLevel               string   // loglevel
-	FlockName              string   // Name of the flock
-	FlockID                string   // Flock ID
-	CreateFlockIfNotExists bool     // should we create the flock if it didn't exist?
-	CustomMemo             string   // custom memo to be added to the default one
+	FilesCount                 int      // number of files per directory
+	RandYearsBack              int      // Randomize dates between Now() and 'years' back
+	LocalTokenProxy            bool     // start as a local token proxy?
+	DropWhere                  string   // where to drop tokens?
+	KindsStr                   string   // comma-separated string with what kind of tokens to drop
+	Kinds                      []string // what kind of tokens to drop
+	LogLevel                   string   // loglevel
+	FlockName                  string   // Name of the flock
+	FlockID                    string   // Flock ID
+	CreateFlockIfNotExists     bool     // should we create the flock if it didn't exist?
+	CreateDirectoryIfNotExists bool     // should we create the directory (DropWhere) if it didn't exist?
+	CustomMemo                 string   // custom memo to be added to the default one
+	FileName                   string   // the filename of the token, if this is set, count will be one, and there will be some checks to make sure the extension matchs the kind
+	RandomizeFilenames         bool     // add random text to filenames to make them unique
+	OverwriteFileIfExists      bool     // if a file with same name exists, should we overwrite it?
 }
 
 // ChirpForwarderConfig contains configs for the forwarder

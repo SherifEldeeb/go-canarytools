@@ -5,23 +5,28 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
+	"unicode/utf16"
 
 	log "github.com/sirupsen/logrus"
 )
 
 // Client is a canarytools client, which is used to issue requests to the API
 type Client struct {
-	domain     string
-	apikey     string
-	baseURL    *url.URL
-	httpclient *http.Client
-	l          *log.Logger
+	domain      string
+	apikey      string
+	factoryAuth string
+	opmode      string // can be "api" or "factory"
+	baseURL     *url.URL
+	httpclient  *http.Client
+	l           *log.Logger
 }
 
 // GetFlockNameFromID retrieves the flock name given its ID
@@ -108,12 +113,12 @@ func (c Client) FlockIDExists(flockid string) (exists bool, err error) {
 // GetFlocksSummary returns summary for all flocks
 func (c Client) GetFlocksSummary() (flocksSummaryResponse FlocksSummaryResponse, err error) {
 	flocksSummaryResponse = FlocksSummaryResponse{}
-	err = c.decodeResponse("flocks/summary", "GET", nil, &flocksSummaryResponse)
-	if err != nil {
-		return
+	errJsonDecode := c.decodeResponse("flocks/summary", "GET", nil, &flocksSummaryResponse)
+	if errJsonDecode != nil {
+		c.l.Debugf("error decoding JSON response (shouldn't be a big problem, unless we fail the next check): %s", errJsonDecode)
 	}
 	if flocksSummaryResponse.Result != "success" {
-		err = fmt.Errorf(flocksSummaryResponse.Message)
+		err = fmt.Errorf("error getting flocks summary: %s", flocksSummaryResponse.Message)
 	}
 	return
 }
@@ -133,20 +138,33 @@ func (c Client) GetFlockSummary(flockid string) (flocksummaryresponse FlockSumma
 	return
 }
 
-// NewClient creates a new client from domain & API Key
-func NewClient(domain, apikey string, l *log.Logger) (c *Client, err error) {
+// NewClient creates a new client from domain, auth token and operation mode
+// operation mode determines the auth token type:
+// "api": auth token is the main console api
+// "factory": auth token  is the factory_auth
+func NewClient(domain, authtoken, opmode string, l *log.Logger) (c *Client, err error) {
 	c = &Client{}
 	c.l = l
-	c.httpclient = &http.Client{Timeout: 10 * time.Second}
+	c.httpclient = &http.Client{Timeout: 180 * time.Second}
 	c.domain = domain
-	c.apikey = apikey
+	c.opmode = opmode
+	switch c.opmode {
+	case "api":
+		c.apikey = authtoken
+	case "factory":
+		c.factoryAuth = authtoken
+	default:
+		return nil, fmt.Errorf("unsupported opmode: %s, valid values are 'api' & 'factory'")
+	}
 	c.baseURL, err = url.Parse(fmt.Sprintf("https://%s.canary.tools/api/v1/", domain))
 	if err != nil {
 		return
 	}
 
-	c.l.Debug("pinging console...")
-	err = c.Ping()
+	if c.opmode == "api" { // factory does not support ping
+		c.l.Debug("pinging console...")
+		err = c.Ping()
+	}
 	return
 }
 
@@ -171,17 +189,120 @@ func (c Client) DeleteCanarytoken(canarytoken string) (err error) {
 }
 
 // DropFileToken drops a file token
-func (c Client) DropFileToken(kind, memo, filename, FlockID string, CreateFlockIfNotExists bool) (err error) {
+func (c Client) DropFileToken(kind, memo, dropWhere, filename, FlockID string, CreateFlockIfNotExists, CreateDirectoryIfNotExists, OverwriteFileIfExists bool) (err error) {
 	c.l.WithFields(log.Fields{
 		"kind":                   kind,
 		"memo":                   memo,
 		"flock_id":               FlockID,
 		"CreateFlockIfNotExists": CreateFlockIfNotExists,
 		"filename":               filename,
+		"dropWhere":              dropWhere,
 	}).Debugf("Generating Token")
+
+	// check if 'where' directory exists
+	// if it doesn't exist, and CreateDirectoryIfNotExists is true, create it
+	// if it doesn't exist, and CreateDirectoryIfNotExists is false, error out
+	absPath, err := filepath.Abs(dropWhere)
+	if err != nil {
+		return
+	}
+	if _, errstat := os.Stat(absPath); os.IsNotExist(errstat) { // it does NOT exist
+		if CreateDirectoryIfNotExists {
+			os.MkdirAll(absPath, 0755)
+		} else {
+			err = fmt.Errorf("'where' does not exist, and you told me not to create it ... gonna have to bail out")
+			return
+		}
+	}
+
+	fullTokenPath := filepath.Join(dropWhere, filename)
 
 	var tcr = TokenCreateResponse{}
 	switch kind {
+	case "windows-dir":
+		// tcr, err = c.CreateTokenFromAPI(kind, memo, FlockID, nil)
+		// if err != nil {
+		// 	return
+		// }
+		// if tcr.Result != "success" {
+		// 	err = fmt.Errorf("failed to CreateTokenFromAPI")
+		// 	return
+		// }
+		// _, err = c.DownloadWindowsDirTokenFromAPI(tcr.Canarytoken.Canarytoken, dropWhere, filename, OverwriteFileIfExists)
+		// if err != nil {
+		// 	return
+		// }
+
+		tcr, err = c.CreateTokenFromAPI(kind, memo, FlockID, nil)
+		if err != nil {
+			return
+		}
+		if tcr.Result != "success" {
+			err = fmt.Errorf("failed to CreateTokenFromAPI")
+			return
+		}
+		var iniTemplate = "\r\n[.ShellClassInfo]\r\nIconResource=\\\\%%USERNAME%%.%%USERDOMAIN%%.INI.%s\\resource.dll\r\n"
+		// simple checks
+		exists, errFileExists := fileExists(fullTokenPath)
+		if errFileExists != nil {
+			return errFileExists
+		}
+
+		if !exists || OverwriteFileIfExists {
+			if exists {
+				c.l.WithField("file", fullTokenPath).Warn("file exists and will be overwritten! ('-overwrite-files' is set to true)")
+			}
+			// Create the directory
+			err = os.MkdirAll(fullTokenPath, 0755)
+			if err != nil {
+				return err
+			}
+			// Create the file
+			fullTokenPathINI := filepath.Join(fullTokenPath, "desktop.ini")
+			out, err := os.Create(fullTokenPathINI)
+			if err != nil {
+				return err
+			}
+
+			// windows loves UTF-16LE with BOM
+			var bytes [2]byte
+			const BOM = '\ufffe' //LE. for BE '\ufeff'
+			bytes[0] = BOM >> 8
+			bytes[1] = BOM & 255
+			_, err = out.Write(bytes[0:])
+			if err != nil {
+				return err
+			}
+			runes := utf16.Encode([]rune(fmt.Sprintf(iniTemplate, tcr.Canarytoken.Hostname)))
+			for _, r := range runes {
+				bytes[1] = byte(r >> 8)
+				bytes[0] = byte(r & 255)
+				_, err = out.Write(bytes[0:])
+				if err != nil {
+					return err
+				}
+			}
+			// Write the body to file
+			// _, err = out.WriteString(fmt.Sprintf(iniTemplate, tcr.Canarytoken.Hostname))
+			out.Close()
+			if err != nil {
+				return err
+			}
+			// set the file to be hidden
+			err = SetFileAttributeHiddenAndSystem(fullTokenPathINI)
+			if err != nil {
+				return err
+			}
+			// Setting the dir to system
+			err = SetFileAttributeSystem(fullTokenPath)
+			if err != nil {
+				return err
+			}
+		}
+		if exists && !OverwriteFileIfExists { // id DOES exist, and you told me not to overwrite
+			return fmt.Errorf("file exists: %s, and '-overwrite-file' is false", fullTokenPath)
+		}
+
 	case "aws-id":
 		tcr, err = c.CreateTokenFromAPI(kind, memo, FlockID, nil)
 		if err != nil {
@@ -195,12 +316,20 @@ func (c Client) DropFileToken(kind, memo, filename, FlockID string, CreateFlockI
 aws_access_key=%s
 aws_secret_access_key=%s
 region=us-east-2
-output=json
+output=json 
 `
 		// simple checks
-		if !fileExists(filename) {
+		exists, errFileExists := fileExists(fullTokenPath)
+		if errFileExists != nil {
+			return errFileExists
+		}
+
+		if !exists || OverwriteFileIfExists {
+			if exists {
+				c.l.WithField("file", fullTokenPath).Warn("file exists and will be overwritten! ('-overwrite-files' is set to true)")
+			}
 			// Create the file
-			out, err := os.Create(filename)
+			out, err := os.Create(fullTokenPath)
 			if err != nil {
 				return err
 			}
@@ -208,8 +337,9 @@ output=json
 
 			// Write the body to file
 			_, err = out.WriteString(fmt.Sprintf(aswTemplate, tcr.Canarytoken.AccessKeyID, tcr.Canarytoken.SecretAccessKey))
-		} else {
-			return fmt.Errorf("file exists: %s", filename)
+		}
+		if exists && !OverwriteFileIfExists { // id DOES exist, and you told me not to overwrite
+			return fmt.Errorf("file exists: %s, and '-overwrite-file' is false", fullTokenPath)
 		}
 	case "doc-msword", "pdf-acrobat-reader", "msword-macro", "msexcel-macro":
 		tcr, err = c.CreateTokenFromAPI(kind, memo, FlockID, nil)
@@ -220,10 +350,57 @@ output=json
 			err = fmt.Errorf("failed to CreateTokenFromAPI")
 			return
 		}
-		_, err = c.DownloadTokenFromAPI(tcr.Canarytoken.Canarytoken, filename)
+		_, err = c.DownloadTokenFromAPI(tcr.Canarytoken.Canarytoken, fullTokenPath, OverwriteFileIfExists)
 	default:
 		err = fmt.Errorf("unsupported Canarytoken: %s", kind)
+	}
+	return
+}
+
+// CreateFactory creates an auth string for the Canarytoken Factory endpoint.
+func (c Client) CreateFactory(memo string) (createfactoryresponse CreateFactoryResponse, err error) {
+	createfactoryresponse = CreateFactoryResponse{}
+	u := &url.Values{}
+	u.Set("memo", memo)
+
+	err = c.decodeResponse("canarytoken/create_factory", "POST", u, &createfactoryresponse)
+	if err != nil {
 		return
+	}
+
+	if createfactoryresponse.Result != "success" {
+		err = fmt.Errorf("error creating token: %s", err)
+	}
+	return
+}
+
+// CreateTokenFromFactory uses the canarytoken/factory API endpoint to create a token
+func (c Client) CreateTokenFromFactory(kind, memo, FlockID string, additionalParams *url.Values) (tokencreateresponse TokenCreateResponse, err error) {
+	tokencreateresponse = TokenCreateResponse{}
+	u := &url.Values{}
+	if additionalParams != nil {
+		u = additionalParams
+	}
+	u.Set("kind", kind)
+	u.Set("memo", memo)
+	if FlockID != "" {
+		u.Set("flock_id", FlockID)
+	}
+
+	switch kind {
+	// case "doc-msword", "pdf-acrobat-reader", "msword-macro", "msexcel-macro":
+	case "http", "dns", "cloned-web", "doc-msword", "web-image", "windows-dir", "pdf-acrobat-reader", "msword-macro", "msexcel-macro", "aws-id", "qr-code", "fast-redirect", "slow-redirect", "slack-api":
+	// TODO: must check additional params per kind
+	default:
+		return tokencreateresponse, errors.New("unsupported token type: " + kind)
+	}
+
+	err = c.decodeResponse("canarytoken/factory", "POST", u, &tokencreateresponse)
+	if err != nil {
+		return
+	}
+	if tokencreateresponse.Result != "success" {
+		err = fmt.Errorf("error creating token: %s", err)
 	}
 	return
 }
@@ -250,11 +427,16 @@ func (c Client) CreateTokenFromAPI(kind, memo, FlockID string, additionalParams 
 	}
 
 	err = c.decodeResponse("canarytoken/create", "POST", u, &tokencreateresponse)
+	if err != nil {
+		return
+	}
+	if tokencreateresponse.Result != "success" {
+		err = fmt.Errorf("error creating token: %s", err)
+	}
 	return
 }
 
-// DownloadTokenFromAPI downloads a file-based token given its ID
-func (c Client) DownloadTokenFromAPI(canarytoken, filename string) (n int64, err error) {
+func (c Client) DownloadWindowsDirTokenFromAPI(canarytoken, dropWhere, filename string, OverwriteFileIfExists bool) (n int64, err error) {
 	params := &url.Values{}
 	params.Set("canarytoken", canarytoken)
 
@@ -272,7 +454,97 @@ func (c Client) DownloadTokenFromAPI(canarytoken, filename string) (n int64, err
 		return 0, fmt.Errorf("DownloadTokenFromAPI returned: %d", resp.StatusCode)
 	}
 
-	if !fileExists(filename) {
+	// create temp folder
+	tmpdir, err := ioutil.TempDir("", "tokendropper")
+	if err != nil {
+		return 0, err
+	}
+	defer os.RemoveAll(tmpdir)
+	tmpFilename := filepath.Join(tmpdir, filename+".zip")
+	// Create the file
+	out, err := os.Create(tmpFilename)
+	if err != nil {
+		return 0, err
+	}
+	defer out.Close()
+	n, err = io.Copy(out, resp.Body)
+	if err != nil {
+		return
+	}
+	// now we have the zip file in a temp folder
+	// we need to unzip it.
+	c.l.WithFields(log.Fields{
+		"tmpFilename": tmpFilename,
+		"tmpdir":      tmpdir,
+	}).Debug("unzipping windows-dir Canarytoken")
+	filenames, err := Unzip(tmpFilename, tmpdir)
+	if err != nil {
+		return
+	}
+	for _, filename := range filenames {
+		c.l.WithField("file", filename).Debug("file extracted from zip")
+	}
+	oldpath := filepath.Join(tmpdir, "My Documents")
+	newfoldername := filename
+	// newpath := filepath.Join(oldpath, newfoldername)
+
+	// full path of token
+	tokenFullDirPath := filepath.Join(dropWhere, filename)
+	c.l.WithFields(log.Fields{
+		"oldpath":          oldpath,
+		"newfoldername":    newfoldername,
+		"tokenFullDirPath": tokenFullDirPath,
+		// "newpath":       newpath,
+	}).Debug("renaming default windows-dir default directory")
+
+	// check if new folder does not already exist
+	exists, err := fileExists(tokenFullDirPath)
+	if err != nil {
+		return
+	}
+	if !exists || OverwriteFileIfExists {
+		err = os.MkdirAll(tokenFullDirPath, 0755)
+		if err != nil {
+			return
+		}
+		// Read contents
+
+		err = os.Rename(oldpath, tokenFullDirPath)
+		if err != nil {
+			return
+		}
+	}
+	// defer shoud take or of cleaning up the tmpdir
+	return
+}
+
+// DownloadTokenFromAPI downloads a file-based token given its ID
+func (c Client) DownloadTokenFromAPI(canarytoken, filename string, OverwriteFileIfExists bool) (n int64, err error) {
+	params := &url.Values{}
+	params.Set("canarytoken", canarytoken)
+
+	fullURL, err := c.api("canarytoken/download", params)
+	if err != nil {
+		return
+	}
+	resp, err := c.httpclient.Get(fullURL.String())
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return 0, fmt.Errorf("DownloadTokenFromAPI returned: %d", resp.StatusCode)
+	}
+
+	exists, err := fileExists(filename)
+	if err != nil {
+		return
+	}
+	if !exists || OverwriteFileIfExists {
+		if exists {
+			c.l.WithField("file", filename).Warn("file exists and will be overwritten! ('-overwrite-files' is set to true)")
+		}
 		// Create the file
 		out, err := os.Create(filename)
 		if err != nil {
@@ -282,8 +554,9 @@ func (c Client) DownloadTokenFromAPI(canarytoken, filename string) (n int64, err
 
 		// Write the body to file
 		n, err = io.Copy(out, resp.Body)
-	} else {
-		return 0, fmt.Errorf("file exists: %s", filename)
+	}
+	if exists && !OverwriteFileIfExists { // it DOES exist, and you told me not to overwrite
+		return 0, fmt.Errorf("file exists: %s, and '-overwrite-file' is false", filename)
 	}
 	return
 }
@@ -299,8 +572,17 @@ func (c Client) api(endpoint string, params *url.Values) (fullURL *url.URL, err 
 	if params == nil {
 		params = &url.Values{}
 	}
-	// always add auth token to list of values
-	params.Add("auth_token", c.apikey)
+
+	switch c.opmode {
+	case "api":
+		// always add auth token to list of values
+		params.Add("auth_token", c.apikey)
+	case "factory":
+		// always add auth token to list of values
+		params.Add("factory_auth", c.factoryAuth)
+	default:
+		c.l.WithField("opmode", c.opmode).Fatal("unsupported client opmode")
+	}
 
 	// adding the API endpoint to path
 	fullURL, err = url.Parse(c.baseURL.String())

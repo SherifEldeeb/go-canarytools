@@ -28,7 +28,7 @@ type ConsoleAPIFeeder struct {
 // NewConsoleAPIFeeder creates a new ConsolevAPI feeder
 func NewConsoleAPIFeeder(domain, apikey, thenWhat, sinceWhen, whichIncidents, flockName string, fetchInterval int, l *log.Logger) (c *ConsoleAPIFeeder, err error) {
 	c = &ConsoleAPIFeeder{}
-	c.Client, err = NewClient(domain, apikey, l)
+	c.Client, err = NewClient(domain, apikey, "api", l)
 	if err != nil {
 		return
 	}
