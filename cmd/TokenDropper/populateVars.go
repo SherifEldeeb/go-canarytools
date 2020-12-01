@@ -34,8 +34,8 @@ use this flag to add custom text to the Canarytoken memo`)
 	flag.StringVar(&cfg.ConsoleTokenFile, "tokenfile", "", "the token file 'canarytools.config' which contains auth token and the domain")
 
 	// Creating tokens using FActory? can't be used with API
-	// flag.StringVar(&cfg.ConsoleFactoryAuth, "factoryauth", "", "factory authentication key (can't be specified with '-apikey')")
-	// flag.StringVar(&cfg.FactoryAuthFile, "factoryauthfile", "", "the factory auth file 'canaryfactoryauth.config' which contains factory auth and the domain")
+	flag.StringVar(&cfg.ConsoleFactoryAuth, "factoryauth", "", "factory authentication key (can't be specified with '-apikey')")
+	flag.StringVar(&cfg.FactoryAuthFile, "factoryauthfile", "", "the factory auth file 'canaryfactoryauth.config' which contains factory auth and the domain")
 
 	// Flock Specific flags
 	flag.StringVar(&cfg.FlockName, "flock", "", "created tokens will be part of this flock 'if empty, will be assigned to the default flock'")
