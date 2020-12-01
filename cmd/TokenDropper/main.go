@@ -2,6 +2,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"math/rand"
@@ -93,7 +94,7 @@ func main() {
 	// by now, we should have both key and domain
 
 	// create new canary API client
-	c, err := canarytools.NewClient(cfg.ConsoleAPIDomain, cfg.ConsoleAPIKey, cfg.OpMode, l)
+	c, err := canarytools.NewClient(cfg.ConsoleAPIConfig, l)
 	if err != nil {
 		l.WithField("err", err).Fatal("error creating canary client")
 	}
@@ -147,11 +148,6 @@ func main() {
 					continue
 				}
 			}
-			l.WithFields(log.Fields{
-				"kind":     kind,
-				"filename": filename,
-				"where":    cfg.DropWhere,
-			}).Info("Generating Token")
 			memo, err := CreateMemo(filename, cfg.DropWhere, cfg.CustomMemo)
 			if err != nil {
 				l.Error(err)
@@ -162,6 +158,7 @@ func main() {
 				"kind":     kind,
 				"filename": filename,
 				"memo":     memo,
+				"where":    cfg.DropWhere,
 			}).Debug("Generating Token")
 
 			// drop
@@ -194,6 +191,12 @@ func finishConfig(cfg *canarytools.TokenDropperConfig, l *log.Logger) (err error
 	// start
 	// dpending on the execution environment, sometimes "./" does not get evaluated as "same dir as the exe file"
 	// so, till I figure out a better way, we do the following.
+	if (cfg.FactoryAuthFile != "" || cfg.ConsoleFactoryAuth != "") && (cfg.ConsoleAPIKey != "" || cfg.ConsoleTokenFile != "") {
+		return errors.New("can't specify both factory && console API")
+	}
+	if cfg.FactoryAuthFile != "" || cfg.ConsoleFactoryAuth != "" {
+		cfg.OpMode = "factory"
+	}
 	if cfg.DropWhere == "./" {
 		p, err := os.Executable()
 		if err != nil {
@@ -232,20 +235,41 @@ func finishConfig(cfg *canarytools.TokenDropperConfig, l *log.Logger) (err error
 
 	// try to populte domain hash and API key
 	// either from file or params...
-	// first, we didn't get api key and domain through flags? let's try to load them from file
-	if cfg.ConsoleAPIKey == "" && cfg.ConsoleAPIDomain == "" {
-		// if we don't have them, we try to load it from same drectory
-		if cfg.ConsoleTokenFile == "" { // if not
-			cfg.ConsoleTokenFile = filepath.Join(cfg.DropWhere, "canarytools.config")
+	switch cfg.OpMode {
+	case "api":
+		// first, we didn't get api key and domain through flags? let's try to load them from file
+		if cfg.ConsoleAPIKey == "" && cfg.ConsoleAPIDomain == "" {
+			// if we don't have them, we try to load it from same drectory
+			if cfg.ConsoleTokenFile == "" { // if not
+				cfg.ConsoleTokenFile = filepath.Join(cfg.DropWhere, "canarytools.config")
+			}
+			// do we have canarytools.config in same path? get data from it...
+			if _, err := os.Stat(cfg.ConsoleTokenFile); os.IsNotExist(err) {
+				return fmt.Errorf("canarytools.config does not exist, and we couldn't get domain hash and API key")
+			}
+			cfg.ConsoleAPIKey, cfg.ConsoleAPIDomain, err = canarytools.LoadTokenFile(cfg.ConsoleTokenFile)
+			if err != nil || cfg.ConsoleAPIDomain == "" || cfg.ConsoleAPIKey == "" {
+				return fmt.Errorf("error parsing token file: %s", err)
+			}
 		}
-		// do we have canarytools.config in same path? get data from it...
-		if _, err := os.Stat(cfg.ConsoleTokenFile); os.IsNotExist(err) {
-			return fmt.Errorf("canarytools.config does not exist, and we couldn't get domain hash and API key")
+	case "factory":
+		// first, we didn't get api key and domain through flags? let's try to load them from file
+		if cfg.ConsoleFactoryAuth == "" && cfg.ConsoleAPIDomain == "" {
+			// if we don't have them, we try to load it from same drectory
+			if cfg.FactoryAuthFile == "" { // if not
+				cfg.FactoryAuthFile = filepath.Join(cfg.DropWhere, "canarytools.config")
+			}
+			// do we have canarytools.config in same path? get data from it...
+			if _, err := os.Stat(cfg.FactoryAuthFile); os.IsNotExist(err) {
+				return fmt.Errorf("canarytools.config does not exist, and we couldn't get domain hash and API key")
+			}
+			cfg.ConsoleFactoryAuth, cfg.ConsoleAPIDomain, err = canarytools.LoadTokenFile(cfg.FactoryAuthFile)
+			if err != nil || cfg.ConsoleAPIDomain == "" || cfg.ConsoleFactoryAuth == "" {
+				return fmt.Errorf("error parsing factory auth token file: %s", err)
+			}
 		}
-		cfg.ConsoleAPIKey, cfg.ConsoleAPIDomain, err = canarytools.LoadTokenFile(cfg.ConsoleTokenFile)
-		if err != nil || cfg.ConsoleAPIDomain == "" || cfg.ConsoleAPIKey == "" {
-			return fmt.Errorf("error parsing token file: %s", err)
-		}
+	default:
+		return fmt.Errorf("unknown opmode: %s", cfg.OpMode)
 	}
 
 	// checks if they specified the filename

@@ -34,3 +34,4 @@ cmd/TokenDropper/Jamf/TokenDropper.zip
 build/*/*
 cmd/TokenDropper/dump.rdb
 cmd/PokeCanary/canaries.txt
+cmd/TokenDropper/*.docx

@@ -142,21 +142,21 @@ func (c Client) GetFlockSummary(flockid string) (flocksummaryresponse FlockSumma
 // operation mode determines the auth token type:
 // "api": auth token is the main console api
 // "factory": auth token  is the factory_auth
-func NewClient(domain, authtoken, opmode string, l *log.Logger) (c *Client, err error) {
+func NewClient(cfg ConsoleAPIConfig, l *log.Logger) (c *Client, err error) {
 	c = &Client{}
 	c.l = l
 	c.httpclient = &http.Client{Timeout: 180 * time.Second}
-	c.domain = domain
-	c.opmode = opmode
+	c.domain = cfg.ConsoleAPIDomain
+	c.opmode = cfg.OpMode
 	switch c.opmode {
 	case "api":
-		c.apikey = authtoken
+		c.apikey = cfg.ConsoleAPIKey
 	case "factory":
-		c.factoryAuth = authtoken
+		c.factoryAuth = cfg.ConsoleFactoryAuth
 	default:
 		return nil, fmt.Errorf("unsupported opmode: %s, valid values are 'api' & 'factory'")
 	}
-	c.baseURL, err = url.Parse(fmt.Sprintf("https://%s.canary.tools/api/v1/", domain))
+	c.baseURL, err = url.Parse(fmt.Sprintf("https://%s.canary.tools/api/v1/", cfg.ConsoleAPIDomain))
 	if err != nil {
 		return
 	}
@@ -426,7 +426,18 @@ func (c Client) CreateTokenFromAPI(kind, memo, FlockID string, additionalParams 
 		return tokencreateresponse, errors.New("unsupported token type: " + kind)
 	}
 
-	err = c.decodeResponse("canarytoken/create", "POST", u, &tokencreateresponse)
+	var apiEndpoint string
+
+	switch c.opmode {
+	case "api":
+		apiEndpoint = "canarytoken/create"
+	case "factory":
+		apiEndpoint = "canarytoken/factory"
+	default:
+		err = errors.New("unsupported opmode: " + c.opmode)
+		return
+	}
+	err = c.decodeResponse(apiEndpoint, "POST", u, &tokencreateresponse)
 	if err != nil {
 		return
 	}
@@ -523,7 +534,19 @@ func (c Client) DownloadTokenFromAPI(canarytoken, filename string, OverwriteFile
 	params := &url.Values{}
 	params.Set("canarytoken", canarytoken)
 
-	fullURL, err := c.api("canarytoken/download", params)
+	var apiEndpoint string
+
+	switch c.opmode {
+	case "api":
+		apiEndpoint = "canarytoken/download"
+	case "factory":
+		apiEndpoint = "canarytoken/factory/download"
+	default:
+		err = errors.New("unsupported opmode: " + c.opmode)
+		return
+	}
+
+	fullURL, err := c.api(apiEndpoint, params)
 	if err != nil {
 		return
 	}
