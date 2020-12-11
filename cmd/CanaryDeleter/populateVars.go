@@ -14,7 +14,7 @@ func populateVarsFromFlags(cfg *canarytools.CanaryDeleterConfig) {
 	flag.StringVar(&cfg.ConsoleTokenFile, "tokenfile", "", "the token file 'canarytools.config' which contains auth token and the domain")
 
 	// What to cleanup? valid options are "alerts" and "tokens"
-	flag.StringVar(&cfg.DeleteWhat, "what", "", `What to cleanup? valid options are "alerts" and "tokens"`)
+	flag.StringVar(&cfg.DeleteWhat, "what", "incidents", `What to cleanup? valid options are "incidents" and "tokens"`)
 	flag.BoolVar(&cfg.IncludeUnacknowledged, "include-unacknowledged-incidents", true, `Include Unacknowledged Incidents?`)
 
 	// Flock Specific flags
