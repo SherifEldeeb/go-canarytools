@@ -49,6 +49,21 @@ type GeneralTokenDropperConfig struct {
 	OverwriteFileIfExists      bool     // if a file with same name exists, should we overwrite it?
 }
 
+// CanaryDeleterConfig contains configs for the CanaryDeleter
+type CanaryDeleterConfig struct {
+	ConsoleAPIConfig
+	GeneralCanaryDeleterConfig
+}
+
+// GeneralCanaryDeleterConfig contains general configs for CanaryDeleter
+type GeneralCanaryDeleterConfig struct {
+	DeleteWhat string // what to delete? either alerts or tokens
+	FlockName  string // Name of the flock
+	FlockID    string // Flock ID
+	LogLevel string
+	IncludeUnacknowledged bool
+}
+
 // ChirpForwarderConfig contains configs for the forwarder
 type ChirpForwarderConfig struct {
 	// General flags

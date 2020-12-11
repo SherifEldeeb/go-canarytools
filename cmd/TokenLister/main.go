@@ -75,7 +75,7 @@ func main() {
 
 	l.Info("Creating a console API client & pinging your console...")
 
-	c, err := canarytools.NewClient(cfg.ConsoleAPIDomain, cfg.ConsoleAPIKey, cfg.OpMode, l)
+	c, err := canarytools.NewClient(cfg, l)
 	if err != nil {
 		l.Fatal(err)
 	}

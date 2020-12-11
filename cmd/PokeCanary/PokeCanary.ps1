@@ -5,8 +5,9 @@
     Each line in that text file should be a canary IP or hostname
 
 .NOTES
-    Last Edit: 2020-11-09
+    Last Edit: 2020-12-07
     Version 1.0 - initial release
+    Version 1.1 - Add support for SharePoint Skin
 #>
 
 param (
@@ -100,8 +101,14 @@ function Invoke-HTTPLoginAlert {
 
     # Post (synoligy)
     $postParams = @{username = $user; password = $pass }
-    Write-Host -ForegroundColor Yellow "[!] Poke: HTTP Login (POST Request) $Canary."
+    Write-Host -ForegroundColor Yellow "[!] Poke: HTTP Login (POST Request - Synoligy) $Canary."
     Invoke-WebRequest -Uri "http://$Canary/index.html" -Method POST -Body $postParams
+
+    # Post (SharePoint)
+    $postParams = @{"ctl00`$PlaceHolderMain`$signInControl`$UserName" = $user; "ctl00`$PlaceHolderMain`$signInControl`$password" = $pass }
+    Write-Host -ForegroundColor Yellow "[!] Poke: HTTP Login (POST Request - SharePoint) $Canary."
+    Invoke-WebRequest -Uri "http://$Canary/_forms/default.aspx?ReturnUrl=%2f_layouts%2fAuthenticate.aspx%3fSource%3d%252F&Source=%2F" -Headers $Headers
+
 }
 
 

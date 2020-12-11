@@ -11,6 +11,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 	"unicode/utf16"
@@ -149,8 +150,9 @@ func NewClient(cfg ConsoleAPIConfig, l *log.Logger) (c *Client, err error) {
 	c.domain = cfg.ConsoleAPIDomain
 	c.opmode = cfg.OpMode
 	switch c.opmode {
-	case "api":
+	case "api", "":
 		c.apikey = cfg.ConsoleAPIKey
+		c.opmode = "api"
 	case "factory":
 		c.factoryAuth = cfg.ConsoleFactoryAuth
 	default:
@@ -176,7 +178,7 @@ func (c Client) FetchCanarytokenAll() (tokens []Token, err error) {
 	return
 }
 
-// DeleteCanarytoken fetches all canarytokens
+// DeleteCanarytoken deletes a canarytoken identified by its ID
 func (c Client) DeleteCanarytoken(canarytoken string) (err error) {
 	br := BasicResponse{}
 	u := &url.Values{}
@@ -184,6 +186,25 @@ func (c Client) DeleteCanarytoken(canarytoken string) (err error) {
 	err = c.decodeResponse("canarytoken/delete", "POST", u, &br)
 	if br.Result != "success" {
 		err = fmt.Errorf("Error deleting token %s: %s", canarytoken, br.Message)
+	}
+	return
+}
+
+// DeleteMultipleIncidents deletes multiple incidents identified by a filter
+// https://docs.canary.tools/incidents/actions.html#delete-multiple-incidents
+func (c Client) DeleteMultipleIncidents(paramType, paramValue string, includeUnacknowledged bool) (err error) {
+	switch paramType {
+	case "flock_id", "node_id", "src_host", "older_than", "filter_str", "filter_logtypes":
+	default:
+		return errors.New("unsupported parameter for DeleteMultipleIncidents: " + paramType)
+	}
+	br := BasicResponse{}
+	u := &url.Values{}
+	u.Set(paramType, paramValue)
+	u.Set("include_unacknowledged", strconv.FormatBool(includeUnacknowledged))
+	err = c.decodeResponse("incidents/delete", "DELETE", u, &br)
+	if br.Result != "success" {
+		err = fmt.Errorf("Error deleting Incidents %s:%s - %s", paramType, paramValue, br.Message)
 	}
 	return
 }
