@@ -57,11 +57,12 @@ type CanaryDeleterConfig struct {
 
 // GeneralCanaryDeleterConfig contains general configs for CanaryDeleter
 type GeneralCanaryDeleterConfig struct {
-	DeleteWhat string // what to delete? either alerts or tokens
-	FlockName  string // Name of the flock
-	FlockID    string // Flock ID
-	LogLevel string
+	DeleteWhat            string // what to delete? either alerts or tokens
+	FlockName             string // Name of the flock
+	FlockID               string // Flock ID
+	LogLevel              string
 	IncludeUnacknowledged bool
+	DumpToJson            bool
 }
 
 // ChirpForwarderConfig contains configs for the forwarder

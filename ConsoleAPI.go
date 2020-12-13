@@ -896,3 +896,39 @@ func (c *Client) DeleteIncident(incident string) (err error) {
 
 	return
 }
+
+// SearchIncidents returns all Incidents specified
+func (c Client) SearchIncidents(flockID string) (respIncidents []interface{}, err error) {
+	respIncidents = make([]interface{}, 0)
+	resp := IncidentSearchResponse{}
+
+	u := &url.Values{}
+	u.Add("flock_id", flockID)
+
+	for {
+		err = c.decodeResponse("incidents/search", "GET", u, &resp)
+		if err != nil {
+			return
+		}
+
+		if resp.Result != "success" {
+			return nil, errors.New(resp.Message) // there will be a message, if it failed
+		}
+
+		c.l.WithFields(log.Fields{
+			"page_number": resp.PageNumber,
+			"total_pages": resp.TotalPages,
+		}).Infof("incidents fetched")
+		for _, i := range resp.Incidents {
+			respIncidents = append(respIncidents, i)
+		}
+
+		// we done?
+		if resp.TotalPages == resp.PageNumber {
+			break
+		}
+		u.Set("cursor", resp.Cursor.Next)
+	}
+
+	return
+}

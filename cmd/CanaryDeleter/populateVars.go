@@ -16,6 +16,7 @@ func populateVarsFromFlags(cfg *canarytools.CanaryDeleterConfig) {
 	// What to cleanup? valid options are "alerts" and "tokens"
 	flag.StringVar(&cfg.DeleteWhat, "what", "incidents", `What to cleanup? valid options are "incidents" and "tokens"`)
 	flag.BoolVar(&cfg.IncludeUnacknowledged, "include-unacknowledged-incidents", true, `Include Unacknowledged Incidents?`)
+	flag.BoolVar(&cfg.DumpToJson, "dump", true, `dump incidents to a JSON file before deleting them`)
 
 	// Flock Specific flags
 	flag.StringVar(&cfg.FlockName, "flock", "", "Which flock to target?")

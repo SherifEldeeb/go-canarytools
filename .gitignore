@@ -35,3 +35,4 @@ build/*/*
 cmd/TokenDropper/dump.rdb
 cmd/PokeCanary/canaries.txt
 cmd/TokenDropper/*.docx
+cmd/CanaryDeleter/CanaryDeleter
