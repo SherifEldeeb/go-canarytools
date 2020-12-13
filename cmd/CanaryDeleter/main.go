@@ -1,10 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 
@@ -88,6 +90,36 @@ func main() {
 
 	switch cfg.DeleteWhat {
 	case "incidents":
+		if cfg.DumpToJson {
+			l.Infof("dumping incidents to json file before deleting them")
+			l.Info("fetching incidents ... this might take a while")
+			incidents, err := c.SearchIncidents(flockID)
+			if err != nil {
+				l.Fatal(err)
+			}
+			l.WithField("incidents_count", len(incidents)).Info("fetching incidents done!")
+
+			if len(incidents) > 0 {
+				filename := "canary-" + time.Now().UTC().Format("2006-01-02_15-04-05") + ".json"
+				l.WithField("filename", filename).Infof("opening file for writing")
+				f, err := os.Create(filename)
+				if err != nil {
+					l.Fatal(err)
+				}
+				defer f.Close()
+				for _, i := range incidents {
+					j, err := json.Marshal(i)
+					if err != nil {
+						l.WithField("err", err).Error("error marshaling incident")
+					}
+					f.Write(j)
+					f.Write([]byte("\n"))
+				}
+			} else {
+				l.Info("no incidents found! gonna bail out.")
+				os.Exit(0)
+			}
+		}
 		l.WithField("FlockName", cfg.FlockName).WithField("flock_id", cfg.FlockID).Info("deleting all incidents")
 		err = c.DeleteMultipleIncidents("flock_id", flockID, cfg.IncludeUnacknowledged)
 		if err != nil {

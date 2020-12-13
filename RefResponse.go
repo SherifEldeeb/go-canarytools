@@ -185,3 +185,19 @@ type CreateFactoryResponse struct {
 	FactoryURL  string `json:"factory_url,omitempty"`
 	Result      string `json:"result,omitempty"`
 }
+
+// IncidentSearchResponse is the response received by incidents/search
+type IncidentSearchResponse struct {
+	Cursor struct {
+		Next     string `json:"next,omitempty"`
+		NextLink string `json:"next_link,omitempty"`
+		Prev     string `json:"prev,omitempty"`
+		PrevLink string `json:"prev_link,omitempty"`
+	} `json:"cursor,omitempty"`
+	Incidents    []interface{} `json:"incidents,omitempty"`
+	PageNumber   int           `json:"page_number,omitempty"`
+	Result       string        `json:"result,omitempty"`
+	TotalPages   int           `json:"total_pages,omitempty"`
+	TotalResults int           `json:"total_results,omitempty"`
+	Message      string        `json:"message,omitempty"`
+}
