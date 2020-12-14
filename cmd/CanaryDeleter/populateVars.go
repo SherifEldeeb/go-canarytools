@@ -2,8 +2,13 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"os"
+	"path/filepath"
 
 	canarytools "github.com/thinkst/go-canarytools"
+	log "github.com/sirupsen/logrus"
+
 )
 
 func populateVarsFromFlags(cfg *canarytools.CanaryDeleterConfig) {
@@ -20,4 +25,69 @@ func populateVarsFromFlags(cfg *canarytools.CanaryDeleterConfig) {
 
 	// Flock Specific flags
 	flag.StringVar(&cfg.FlockName, "flock", "", "Which flock to target?")
+
+	// Node specific flag
+	flag.StringVar(&cfg.NodeID, "node", "", "Which 'Node ID' to target?")
+}
+
+func finishConfig(cfg *canarytools.CanaryDeleterConfig, l *log.Logger) (err error) {
+	// Set LogLevel
+	switch cfg.LogLevel {
+	case "info":
+		l.SetLevel(log.InfoLevel)
+	case "warning":
+		l.SetLevel(log.WarnLevel)
+	case "debug":
+		l.SetLevel(log.DebugLevel)
+	case "trace":
+		l.SetLevel(log.TraceLevel)
+	default:
+		l.Warn("unsupported log level, or none specified; will set to 'Debug'")
+		l.SetLevel(log.DebugLevel)
+	}
+
+	// flock or node?
+	if cfg.FlockName != "" && cfg.NodeID != "" {
+		l.Fatal("you can't provide both '-flock' and '-node' at the same time ... pick one")
+	}
+
+	if cfg.FlockName != "" {
+		cfg.FilterType = "flock_id"
+	}
+
+	if cfg.NodeID != "" {
+		cfg.FilterType = "node_id"
+	}
+
+	// Set all hardcoded info, if provided
+	if DOMAIN != "" && cfg.ConsoleAPIDomain == "" { // command line values always Supersede hardcoded ones
+		l.Debug("found pre-configured domain hash value")
+		cfg.ConsoleAPIDomain = DOMAIN
+	}
+	if APIKEY != "" && cfg.ConsoleAPIKey == "" { // command line values always Supersede hardcoded ones
+		l.Debug("found pre-configured API auth value")
+		cfg.ConsoleAPIKey = APIKEY
+	}
+
+	// first, we didn't get api key and domain through flags? let's try to load them from file
+	if cfg.ConsoleAPIKey == "" && cfg.ConsoleAPIDomain == "" {
+		// if we don't have them, we try to load it from same drectory
+		if cfg.ConsoleTokenFile == "" { // if not
+			cwd, _ := os.Getwd()
+			cfg.ConsoleTokenFile = filepath.Join(cwd, "canarytools.config")
+		}
+		// do we have canarytools.config in same path? get data from it...
+		if _, err := os.Stat(cfg.ConsoleTokenFile); os.IsNotExist(err) {
+			return fmt.Errorf("canarytools.config does not exist, and we couldn't get domain hash and API key")
+		}
+		cfg.ConsoleAPIKey, cfg.ConsoleAPIDomain, err = canarytools.LoadTokenFile(cfg.ConsoleTokenFile)
+		if err != nil || cfg.ConsoleAPIDomain == "" || cfg.ConsoleAPIKey == "" {
+			return fmt.Errorf("error parsing token file: %s", err)
+		}
+	}
+	if cfg.FlockName == "" && cfg.NodeID == "" {
+		return fmt.Errorf("You have to specify either the flock name using '-flock', or node ID using '-node'")
+	}
+
+	return
 }

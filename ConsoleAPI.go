@@ -897,13 +897,15 @@ func (c *Client) DeleteIncident(incident string) (err error) {
 	return
 }
 
-// SearchIncidents returns all Incidents specified
-func (c Client) SearchIncidents(flockID string) (respIncidents []interface{}, err error) {
+// SearchIncidents returns all Incidents specified by filter
+// filter can be "flock_id" or "node_id"
+// 
+func (c Client) SearchIncidents(filter string, id string) (respIncidents []interface{}, err error) {
 	respIncidents = make([]interface{}, 0)
 	resp := IncidentSearchResponse{}
 
 	u := &url.Values{}
-	u.Add("flock_id", flockID)
+	u.Add(filter, id)
 
 	for {
 		err = c.decodeResponse("incidents/search", "GET", u, &resp)
