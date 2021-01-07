@@ -27,9 +27,9 @@ popd
 pushd ./$3/macos
 zip -9 TokenDropper.zip TokenDropper
 popd
-cp ../cmd/TokenDropper/Jamf/drop-with-filenames.sh ./$3/macos/
+cp ../cmd/TokenDropper/Jamf/simple-drop-to-dir.sh ./$3/macos/
 tar cvfj ./$3/macos/dropper_jamf.tar.gz ./$3/macos/*.sh ./$3/macos/TokenDropper.zip
-mv ./$3/macos/dropper_jamf.tar.gz ./$3/
+# mv ./$3/macos/dropper_jamf.tar.gz ./$3/
 
 # prep the windows files
 cp ../cmd/TokenDropper/PowerShell/*.ps1 ./$3/windows/
