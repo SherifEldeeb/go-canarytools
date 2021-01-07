@@ -60,6 +60,8 @@ type GeneralCanaryDeleterConfig struct {
 	DeleteWhat            string // what to delete? either alerts or tokens
 	FlockName             string // Name of the flock
 	FlockID               string // Flock ID
+	NodeID                string // Node ID
+	FilterType            string // filter using flock or node?
 	LogLevel              string
 	IncludeUnacknowledged bool
 	DumpToJson            bool

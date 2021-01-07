@@ -3,9 +3,7 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"fmt"
 	"os"
-	"path/filepath"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -43,57 +41,51 @@ func main() {
 		"SHA1VER":   SHA1VER,
 	}).Info("starting CanaryDeleter")
 
-	// Set LogLevel
-	switch cfg.LogLevel {
-	case "info":
-		l.SetLevel(log.InfoLevel)
-	case "warning":
-		l.SetLevel(log.WarnLevel)
-	case "debug":
-		l.SetLevel(log.DebugLevel)
-	case "trace":
-		l.SetLevel(log.TraceLevel)
-	default:
-		l.Warn("unsupported log level, or none specified; will set to 'Debug'")
-		l.SetLevel(log.DebugLevel)
-	}
-
-	// Set all hardcoded info, if provided
-	if DOMAIN != "" && cfg.ConsoleAPIDomain == "" { // command line values always Supersede hardcoded ones
-		l.Debug("found pre-configured domain hash value")
-		cfg.ConsoleAPIDomain = DOMAIN
-	}
-	if APIKEY != "" && cfg.ConsoleAPIKey == "" { // command line values always Supersede hardcoded ones
-		l.Debug("found pre-configured API auth value")
-		cfg.ConsoleAPIKey = APIKEY
-	}
-
 	// Finish config logic
 	err = finishConfig(&cfg, l)
 	if err != nil {
 		l.WithField("err", err).Fatal("configuration error")
 	}
 
+	// Get a client
 	l.Info("building an API client")
 	c, err := canarytools.NewClient(cfg.ConsoleAPIConfig, l)
 	if err != nil {
 		l.Fatal(err)
 	}
-	l.WithField("FlockName", cfg.FlockName).Info("getting flock_id from FlockName")
-	// does the flock exist?
-	flockID, err := c.GetFlockIDFromName(cfg.FlockName)
-	if err != nil {
-		l.Fatal(err)
-	}
-	cfg.FlockID = flockID
-	l.WithField("FlockName", cfg.FlockName).WithField("flock_id", cfg.FlockID).Info("got flock_id")
 
+	if cfg.FlockName != "" {
+		l.WithField("FlockName", cfg.FlockName).Info("getting flock_id from FlockName")
+		// does the flock exist?
+		flockID, err := c.GetFlockIDFromName(cfg.FlockName)
+		if err != nil {
+			l.Fatal(err)
+		}
+		cfg.FlockID = flockID
+		l.WithField("FlockName", cfg.FlockName).WithField("flock_id", cfg.FlockID).Info("got flock_id")
+
+	}
+
+	var id string
+	var filter string
 	switch cfg.DeleteWhat {
 	case "incidents":
 		if cfg.DumpToJson {
 			l.Infof("dumping incidents to json file before deleting them")
 			l.Info("fetching incidents ... this might take a while")
-			incidents, err := c.SearchIncidents(flockID)
+			switch cfg.FilterType {
+			case "flock_id":
+				id = cfg.FlockID
+				filter = "flock_id"
+				l.WithField("flock_id", cfg.FlockID).Info("filtering incidents using Flock ID")
+			case "node_id":
+				id = cfg.NodeID
+				filter = "node_id"
+				l.WithField("node_id", cfg.NodeID).Info("filtering incidents using Node ID")
+			default:
+				l.Fatal("unsupported filter type:" + cfg.FilterType)
+			}
+			incidents, err := c.SearchIncidents(filter, id)
 			if err != nil {
 				l.Fatal(err)
 			}
@@ -120,8 +112,8 @@ func main() {
 				os.Exit(0)
 			}
 		}
-		l.WithField("FlockName", cfg.FlockName).WithField("flock_id", cfg.FlockID).Info("deleting all incidents")
-		err = c.DeleteMultipleIncidents("flock_id", flockID, cfg.IncludeUnacknowledged)
+		l.WithField("id", id).WithField("filter", filter).Info("deleting all incidents")
+		err = c.DeleteMultipleIncidents(filter, id, cfg.IncludeUnacknowledged)
 		if err != nil {
 			l.Fatal(err)
 		}
@@ -132,7 +124,7 @@ func main() {
 		}
 		l.WithField("FlockName", cfg.FlockName).WithField("flock_id", cfg.FlockID).Info("deleting all tokens")
 		for _, token := range t {
-			if token.FlockID == flockID {
+			if token.FlockID == cfg.FlockID {
 				l.Info("deleteing:", token.Canarytoken)
 				err = c.DeleteCanarytoken(token.Canarytoken)
 				if err != nil {
@@ -145,28 +137,4 @@ func main() {
 	}
 	l.Info("done!")
 
-}
-
-func finishConfig(cfg *canarytools.CanaryDeleterConfig, l *log.Logger) (err error) {
-	// first, we didn't get api key and domain through flags? let's try to load them from file
-	if cfg.ConsoleAPIKey == "" && cfg.ConsoleAPIDomain == "" {
-		// if we don't have them, we try to load it from same drectory
-		if cfg.ConsoleTokenFile == "" { // if not
-			cwd, _ := os.Getwd()
-			cfg.ConsoleTokenFile = filepath.Join(cwd, "canarytools.config")
-		}
-		// do we have canarytools.config in same path? get data from it...
-		if _, err := os.Stat(cfg.ConsoleTokenFile); os.IsNotExist(err) {
-			return fmt.Errorf("canarytools.config does not exist, and we couldn't get domain hash and API key")
-		}
-		cfg.ConsoleAPIKey, cfg.ConsoleAPIDomain, err = canarytools.LoadTokenFile(cfg.ConsoleTokenFile)
-		if err != nil || cfg.ConsoleAPIDomain == "" || cfg.ConsoleAPIKey == "" {
-			return fmt.Errorf("error parsing token file: %s", err)
-		}
-	}
-	if cfg.FlockName == "" {
-		return fmt.Errorf("You have to specify the flock name using '-flock'")
-	}
-
-	return
 }
