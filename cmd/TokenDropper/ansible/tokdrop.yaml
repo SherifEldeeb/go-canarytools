@@ -1,0 +1,54 @@
+# TokenDropper Ansible Playbook
+# Version : 0.1
+# Date    : 2021-01-08
+# Author  : Thinkst Customer Success (cs@canary.tools)
+
+# drop_hosts variable MUST be provided during runtime using '-e'
+# this will be a hosts definitions as per the inventory file
+# e.g.: `ansible -e 'drop_hosts = webservers' tokdrop.yaml`
+- hosts: "{{ drop_hosts }}" 
+
+  # Dropper Parameters 
+  # Here you specify:
+  #  - Where to drop the token
+  #  - What kind
+  #  - the filename ... 
+  # if the filename field is empty, a random, interesting-looking filename will be auto generated
+  # but all fields must be present (even if empty, like the filename example below)
+  #
+  # add as much as you want ... they're totally free.
+  vars:
+    dropper_params:
+      "/etc/": 
+        kind: "aws-id"
+        filename: aws_default_key.txt # hardcoded filename.
+      "/var/www":
+        kind: "doc-msword"
+        filename: # Leaving this empty will randomly generate a filename!
+
+
+# Playbook tasks starts here; Explanations are in the 'name:' key
+  tasks:
+    - name: Create temp working directory
+      tempfile:
+        state: directory # not required. choices: directory;file. Whether to create file or directory.
+        prefix: tokdrop # not required. Prefix of directory name created by module.
+      register: tokdrop_tempdir # Store the result (temp work dir reference) in a variable for later use
+
+    - name: Copy TokenDropper binary to the Temp Directory
+      copy:
+        dest: "{{ tokdrop_tempdir.path }}" # required. Remote absolute path where the file should be copied to. If I(src) is a directory, this must be a directory too. If I(dest) is a nonexistent path and if either I(dest) ends with "/" or I(src) is a directory, I(dest) is created. If I(src) and I(dest) are files, the parent directory of I(dest) isn't created: the task fails if it doesn't already exist.
+        src: TokenDropper # not required. Local path to a file to copy to the remote server; can be absolute or relative. If path is a directory, it is copied recursively. In this case, if path ends with "/", only inside contents of that directory are copied to destination. Otherwise, if it does not end with "/", the directory itself with all contents is copied. This behavior is similar to Rsync.
+        force: yes # not required. the default is C(yes), which will replace the remote file when contents are different than the source. If C(no), the file will only be transferred if the destination does not exist.
+        remote_src: no # not required. If C(no), it will search for I(src) at originating/master machine.,If C(yes) it will go to the remote/target machine for the I(src). Default is C(no).,Currently I(remote_src) does not support recursive copying.,I(remote_src) only works with C(mode=preserve) as of version 2.6.
+        unsafe_writes: no # not required. By default this module uses atomic operations to prevent data corruption or inconsistent reads from the target files, but sometimes systems are configured or just broken in ways that prevent this. One example is docker mounted files, which cannot be updated atomically from inside the container and can only be written in an unsafe manner.,This option allows Ansible to fall back to unsafe methods of updating files when atomic operations fail (however, it doesn't force Ansible to perform unsafe writes). IMPORTANT! Unsafe writes are subject to race conditions and can lead to data corruption.
+        mode: 0755 # not required. Mode the file or directory should be. For those used to I(/usr/bin/chmod) remember that modes are actually octal numbers. You must either add a leading zero so that Ansible's YAML parser knows it is an octal number (like C(0644) or C(01777)) or quote it (like C('644') or C('1777')) so Ansible receives a string and can do its own conversion from string into number.  Giving Ansible a number without following one of these rules will end up with a decimal number which will have unexpected results.  As of version 1.8, the mode may be specified as a symbolic mode (for example, C(u+rwx) or C(u=rw,g=r,o=r)).  As of version 2.3, the mode may also be the special string C(preserve).  C(preserve) means that the file will be given the same permissions as the source file.
+
+    - name: Execute TokenDropper with provided params
+      command: "{{ tokdrop_tempdir.path }}/TokenDropper -where {{ item.key }} -kind {{ item.value.kind }} -filename '{{ item.value.filename }}'"
+      loop: "{{ lookup('dict', dropper_params) }}" # iterate over the dropper params, execute once per entry. 
+
+    - name: Delete the temp working directory
+      file:
+        state: absent
+        path: "{{ tokdrop_tempdir.path }}"
