@@ -4,15 +4,15 @@
 # Author  : Thinkst Customer Success (cs@canary.tools)
 
 # drop_hosts variable MUST be provided during runtime using '-e'
-# this will be a hosts definitions as per the inventory file
+# this will be a hosts definition as per the inventory file
 # e.g.: `ansible -e 'drop_hosts = webservers' tokdrop.yaml`
 - hosts: "{{ drop_hosts }}" 
 
   # Dropper Parameters 
   # Here you specify:
-  #  - Where to drop the token
+  #  - Where to drop the token (if dir doesn't exist, it will be created by the tool)
   #  - What kind
-  #  - the filename ... 
+  #  - The filename
   # if the filename field is empty, a random, interesting-looking filename will be auto generated
   # but all fields must be present (even if empty, like the filename example below)
   #
