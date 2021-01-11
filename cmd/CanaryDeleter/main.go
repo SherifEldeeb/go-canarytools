@@ -70,21 +70,21 @@ func main() {
 	var filter string
 	switch cfg.DeleteWhat {
 	case "incidents":
+		l.Infof("dumping incidents to json file")
+		l.Info("fetching incidents ... this might take a while")
+		switch cfg.FilterType {
+		case "flock_id":
+			id = cfg.FlockID
+			filter = "flock_id"
+			l.WithField("flock_id", cfg.FlockID).Info("filtering incidents using Flock ID")
+		case "node_id":
+			id = cfg.NodeID
+			filter = "node_id"
+			l.WithField("node_id", cfg.NodeID).Info("filtering incidents using Node ID")
+		default:
+			l.Fatal("unsupported filter type:" + cfg.FilterType)
+		}
 		if cfg.DumpToJson {
-			l.Infof("dumping incidents to json file before deleting them")
-			l.Info("fetching incidents ... this might take a while")
-			switch cfg.FilterType {
-			case "flock_id":
-				id = cfg.FlockID
-				filter = "flock_id"
-				l.WithField("flock_id", cfg.FlockID).Info("filtering incidents using Flock ID")
-			case "node_id":
-				id = cfg.NodeID
-				filter = "node_id"
-				l.WithField("node_id", cfg.NodeID).Info("filtering incidents using Node ID")
-			default:
-				l.Fatal("unsupported filter type:" + cfg.FilterType)
-			}
 			incidents, err := c.SearchIncidents(filter, id)
 			if err != nil {
 				l.Fatal(err)
@@ -112,6 +112,10 @@ func main() {
 				os.Exit(0)
 			}
 		}
+		if cfg.DumpOnly {
+			l.Info("you told me to only dump incidents, and not delete them ... my work is done. ")
+			os.Exit(0)
+		}
 		l.WithField("id", id).WithField("filter", filter).Info("deleting all incidents")
 		err = c.DeleteMultipleIncidents(filter, id, cfg.IncludeUnacknowledged)
 		if err != nil {
@@ -133,8 +137,7 @@ func main() {
 			}
 		}
 	default:
-		l.Fatal("you have to tell me what to delete using '-what' ... supported values are 'incidents' & 'tokens'")
+		l.Fatal("you have to tell me what to handle using '-what' ... supported values are 'incidents' & 'tokens'")
 	}
 	l.Info("done!")
-
 }

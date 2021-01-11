@@ -65,6 +65,7 @@ type GeneralCanaryDeleterConfig struct {
 	LogLevel              string
 	IncludeUnacknowledged bool
 	DumpToJson            bool
+	DumpOnly              bool // setting this to true will NOT delete incidents
 }
 
 // ChirpForwarderConfig contains configs for the forwarder
