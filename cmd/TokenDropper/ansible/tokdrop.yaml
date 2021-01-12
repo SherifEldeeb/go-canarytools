@@ -1,30 +1,27 @@
 # TokenDropper Ansible Playbook
-# Version : 0.1
-# Date    : 2021-01-08
+# Version : 0.2
+# Date    : 2021-01-11
 # Author  : Thinkst Customer Success (cs@canary.tools)
 
 # drop_hosts variable MUST be provided during runtime using '-e'
 # this will be a hosts definition as per the inventory file
 # e.g.: `ansible -e 'drop_hosts = webservers' tokdrop.yaml`
+# or, simply hardcode the value.
 - hosts: "{{ drop_hosts }}" 
 
-  # Dropper Parameters 
+  # Canarytokens
   # Here you specify:
   #  - Where to drop the token (if dir doesn't exist, it will be created by the tool)
   #  - What kind
   #  - The filename
   # if the filename field is empty, a random, interesting-looking filename will be auto generated
-  # but all fields must be present (even if empty, like the filename example below)
+  # but all fields *must* be present (even if empty, like the second example below)
   #
   # add as much as you want ... they're totally free.
   vars:
-    dropper_params:
-      "/etc/": 
-        kind: "aws-id"
-        filename: aws_default_key.txt # hardcoded filename.
-      "/var/www":
-        kind: "doc-msword"
-        filename: # Leaving this empty will randomly generate a filename!
+    canarytokens:
+      - { where: "/etc/", kind: "aws-id", filename: "aws_default_key.txt" }
+      - { where: "/var/www", kind: "doc-msword", filename: "" }
 
 
 # Playbook tasks starts here; Explanations are in the 'name:' key
@@ -45,8 +42,8 @@
         mode: 0755 # not required. Mode the file or directory should be. For those used to I(/usr/bin/chmod) remember that modes are actually octal numbers. You must either add a leading zero so that Ansible's YAML parser knows it is an octal number (like C(0644) or C(01777)) or quote it (like C('644') or C('1777')) so Ansible receives a string and can do its own conversion from string into number.  Giving Ansible a number without following one of these rules will end up with a decimal number which will have unexpected results.  As of version 1.8, the mode may be specified as a symbolic mode (for example, C(u+rwx) or C(u=rw,g=r,o=r)).  As of version 2.3, the mode may also be the special string C(preserve).  C(preserve) means that the file will be given the same permissions as the source file.
 
     - name: Execute TokenDropper with provided params
-      command: "{{ tokdrop_tempdir.path }}/TokenDropper -where {{ item.key }} -kind {{ item.value.kind }} -filename '{{ item.value.filename }}'"
-      loop: "{{ lookup('dict', dropper_params) }}" # iterate over the dropper params, execute once per entry. 
+      command: "{{ tokdrop_tempdir.path }}/TokenDropper -where {{ item.where }} -kind {{ item.kind }} -filename '{{ item.filename }}'"
+      loop: "{{ canarytokens }}"
 
     - name: Delete the temp working directory
       file:

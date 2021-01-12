@@ -37,3 +37,5 @@ cmd/PokeCanary/canaries.txt
 cmd/TokenDropper/*.docx
 cmd/CanaryDeleter/CanaryDeleter
 cmd/CanaryDeleter/*.json
+cmd/TokenDropper/ansible/TokenDropper
+cmd/TokenDropper/ansible/hosts
