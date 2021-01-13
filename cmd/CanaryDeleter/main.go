@@ -54,7 +54,7 @@ func main() {
 		l.Fatal(err)
 	}
 
-	if cfg.FlockName != "" {
+	if cfg.FlockName != "" && cfg.FlockName != "_all_" {
 		l.WithField("FlockName", cfg.FlockName).Info("getting flock_id from FlockName")
 		// does the flock exist?
 		flockID, err := c.GetFlockIDFromName(cfg.FlockName)
@@ -70,8 +70,7 @@ func main() {
 	var filter string
 	switch cfg.DeleteWhat {
 	case "incidents":
-		l.Infof("dumping incidents to json file")
-		l.Info("fetching incidents ... this might take a while")
+		l.Infof("working on incidents")
 		switch cfg.FilterType {
 		case "flock_id":
 			id = cfg.FlockID
@@ -81,11 +80,20 @@ func main() {
 			id = cfg.NodeID
 			filter = "node_id"
 			l.WithField("node_id", cfg.NodeID).Info("filtering incidents using Node ID")
+		case "_all_":
+			filter = "_all_"
+			l.Info("not going to filter incidents, _all_ specified")
 		default:
 			l.Fatal("unsupported filter type:" + cfg.FilterType)
 		}
 		if cfg.DumpToJson {
-			incidents, err := c.SearchIncidents(filter, id)
+			l.Info("fetching incidents ... this might take a while")
+			var incidents []interface{}
+			if cfg.FilterType == "_all_" {
+				incidents, err = c.SearchAllIncidents()
+			} else {
+				incidents, err = c.SearchFilteredIncidents(filter, id)
+			}
 			if err != nil {
 				l.Fatal(err)
 			}
@@ -113,15 +121,24 @@ func main() {
 			}
 		}
 		if cfg.DumpOnly {
-			l.Info("you told me to only dump incidents, and not delete them ... my work is done. ")
+			l.Info("only dumping incidents, and not deleting them ... so work is done.")
+			l.Info("if you want to delete incidents as well, run the tool with '-dumponly=false'")
 			os.Exit(0)
 		}
-		l.WithField("id", id).WithField("filter", filter).Info("deleting all incidents")
-		err = c.DeleteMultipleIncidents(filter, id, cfg.IncludeUnacknowledged)
+
+		// Deleting starts here
+		if cfg.FilterType == "_all_" {
+			l.Info("deleting *ALL* incidents")
+			err = c.DeleteAllIncidents(cfg.IncludeUnacknowledged)
+		} else {
+			l.WithField("id", id).WithField("filter", filter).Info("deleting filtered incidents")
+			err = c.DeleteMultipleIncidents(filter, id, cfg.IncludeUnacknowledged)
+		}
 		if err != nil {
 			l.Fatal(err)
 		}
 	case "tokens":
+		l.Infof("fetching canarytokens")
 		t, err := c.FetchCanarytokenAll()
 		if err != nil {
 			l.Fatal(err)

@@ -190,6 +190,19 @@ func (c Client) DeleteCanarytoken(canarytoken string) (err error) {
 	return
 }
 
+// DeleteAllIncidents deletes multiple incidents identified by a filter
+// https://docs.canary.tools/incidents/actions.html#delete-multiple-incidents
+func (c Client) DeleteAllIncidents(includeUnacknowledged bool) (err error) {
+	br := BasicResponse{}
+	u := &url.Values{}
+	u.Set("include_unacknowledged", strconv.FormatBool(includeUnacknowledged))
+	err = c.decodeResponse("incidents/delete", "DELETE", u, &br)
+	if br.Result != "success" {
+		err = fmt.Errorf("Error deleting Incidents: %s", br.Message)
+	}
+	return
+}
+
 // DeleteMultipleIncidents deletes multiple incidents identified by a filter
 // https://docs.canary.tools/incidents/actions.html#delete-multiple-incidents
 func (c Client) DeleteMultipleIncidents(paramType, paramValue string, includeUnacknowledged bool) (err error) {
@@ -897,15 +910,25 @@ func (c *Client) DeleteIncident(incident string) (err error) {
 	return
 }
 
+func (c Client) SearchAllIncidents() (respIncidents []interface{}, err error) {
+	return c.searchIncidents("", "", false)
+}
+
+func (c Client) SearchFilteredIncidents(filter string, id string) (respIncidents []interface{}, err error) {
+	return c.searchIncidents(filter, id, true)
+}
+
 // SearchIncidents returns all Incidents specified by filter
 // filter can be "flock_id" or "node_id"
-// 
-func (c Client) SearchIncidents(filter string, id string) (respIncidents []interface{}, err error) {
+func (c Client) searchIncidents(filter string, id string, withFilter bool) (respIncidents []interface{}, err error) {
 	respIncidents = make([]interface{}, 0)
 	resp := IncidentSearchResponse{}
 
-	u := &url.Values{}
-	u.Add(filter, id)
+	var u *url.Values
+	if withFilter {
+		u = &url.Values{}
+		u.Add(filter, id)
+	}
 
 	for {
 		err = c.decodeResponse("incidents/search", "GET", u, &resp)

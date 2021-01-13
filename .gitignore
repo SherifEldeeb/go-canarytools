@@ -37,3 +37,6 @@ cmd/PokeCanary/canaries.txt
 cmd/TokenDropper/*.docx
 cmd/CanaryDeleter/CanaryDeleter
 cmd/CanaryDeleter/*.json
+pkged.go
+cmd/TokenDropper/ansible/TokenDropper
+build/*.zip
