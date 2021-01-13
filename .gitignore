@@ -39,3 +39,6 @@ cmd/CanaryDeleter/CanaryDeleter
 cmd/CanaryDeleter/*.json
 cmd/TokenDropper/ansible/TokenDropper
 cmd/TokenDropper/ansible/hosts
+pkged.go
+cmd/TokenDropper/ansible/TokenDropper
+build/*.zip

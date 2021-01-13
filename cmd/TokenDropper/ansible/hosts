@@ -1,0 +1,2 @@
+[hax]
+hax.deeb.io:23234 ansible_connection=ssh        ansible_user=root

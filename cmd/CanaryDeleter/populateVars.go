@@ -6,9 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	canarytools "github.com/thinkst/go-canarytools"
 	log "github.com/sirupsen/logrus"
-
+	canarytools "github.com/thinkst/go-canarytools"
 )
 
 func populateVarsFromFlags(cfg *canarytools.CanaryDeleterConfig) {
@@ -21,7 +20,8 @@ func populateVarsFromFlags(cfg *canarytools.CanaryDeleterConfig) {
 	// What to cleanup? valid options are "alerts" and "tokens"
 	flag.StringVar(&cfg.DeleteWhat, "what", "incidents", `What to cleanup? valid options are "incidents" and "tokens"`)
 	flag.BoolVar(&cfg.IncludeUnacknowledged, "include-unacknowledged-incidents", true, `Include Unacknowledged Incidents?`)
-	flag.BoolVar(&cfg.DumpToJson, "dump", true, `dump incidents to a JSON file before deleting them`)
+	flag.BoolVar(&cfg.DumpToJson, "dump", true, `dump incidents to a JSON file?`)
+	flag.BoolVar(&cfg.DumpOnly, "dumponly", false, `only dump incidents to a JSON file *without* deleting them?`)
 
 	// Flock Specific flags
 	flag.StringVar(&cfg.FlockName, "flock", "", "Which flock to target?")
@@ -51,11 +51,15 @@ func finishConfig(cfg *canarytools.CanaryDeleterConfig, l *log.Logger) (err erro
 		l.Fatal("you can't provide both '-flock' and '-node' at the same time ... pick one")
 	}
 
-	if cfg.FlockName != "" {
+	if cfg.FlockName == "_all_" || cfg.NodeID == "_all_" {
+		cfg.FilterType = "_all_"
+	}
+
+	if cfg.FlockName != "" && cfg.FlockName != "_all_" {
 		cfg.FilterType = "flock_id"
 	}
 
-	if cfg.NodeID != "" {
+	if cfg.NodeID != "" && cfg.NodeID != "_all_" {
 		cfg.FilterType = "node_id"
 	}
 
@@ -87,6 +91,10 @@ func finishConfig(cfg *canarytools.CanaryDeleterConfig, l *log.Logger) (err erro
 	}
 	if cfg.FlockName == "" && cfg.NodeID == "" {
 		return fmt.Errorf("You have to specify either the flock name using '-flock', or node ID using '-node'")
+	}
+
+	if cfg.DumpOnly && !cfg.DumpToJson {
+		return fmt.Errorf("you have set -dump to false, and -dumponly to true, which doesn't work")
 	}
 
 	return

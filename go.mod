@@ -9,6 +9,7 @@ require (
 	github.com/elastic/go-elasticsearch/v7 v7.6.0
 	github.com/go-logfmt/logfmt v0.5.0
 	github.com/klauspost/compress v1.10.5 // indirect
+	github.com/markbates/pkger v0.17.1
 	github.com/pierrec/lz4 v2.5.2+incompatible // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20200313005456-10cdbea86bc0 // indirect
 	github.com/sirupsen/logrus v1.6.0
