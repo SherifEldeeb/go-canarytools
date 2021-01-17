@@ -58,6 +58,7 @@ type CanaryDeleterConfig struct {
 // GeneralCanaryDeleterConfig contains general configs for CanaryDeleter
 type GeneralCanaryDeleterConfig struct {
 	DeleteWhat            string // what to delete? either alerts or tokens
+	IncidentsState        string // State of Incidents ... valid options are "all", "acknowledged" and "unacknowledged"
 	FlockName             string // Name of the flock
 	FlockID               string // Flock ID
 	NodeID                string // Node ID

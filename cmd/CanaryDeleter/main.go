@@ -90,9 +90,9 @@ func main() {
 			l.Info("fetching incidents ... this might take a while")
 			var incidents []interface{}
 			if cfg.FilterType == "_all_" {
-				incidents, err = c.SearchAllIncidents()
+				incidents, err = c.SearchAllIncidents(cfg.IncidentsState)
 			} else {
-				incidents, err = c.SearchFilteredIncidents(filter, id)
+				incidents, err = c.SearchFilteredIncidents(filter, id, cfg.IncidentsState)
 			}
 			if err != nil {
 				l.Fatal(err)

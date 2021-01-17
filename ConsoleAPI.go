@@ -910,23 +910,31 @@ func (c *Client) DeleteIncident(incident string) (err error) {
 	return
 }
 
-func (c Client) SearchAllIncidents() (respIncidents []interface{}, err error) {
-	return c.searchIncidents("", "", false)
+func (c Client) SearchAllIncidents(state string) (respIncidents []interface{}, err error) {
+	return c.searchIncidents("", "", false, state)
 }
 
-func (c Client) SearchFilteredIncidents(filter string, id string) (respIncidents []interface{}, err error) {
-	return c.searchIncidents(filter, id, true)
+func (c Client) SearchFilteredIncidents(filter string, id string, state string) (respIncidents []interface{}, err error) {
+	return c.searchIncidents(filter, id, true, state)
 }
 
 // SearchIncidents returns all Incidents specified by filter
 // filter can be "flock_id" or "node_id"
-func (c Client) searchIncidents(filter string, id string, withFilter bool) (respIncidents []interface{}, err error) {
+func (c Client) searchIncidents(filter string, id string, withFilter bool, state string) (respIncidents []interface{}, err error) {
 	respIncidents = make([]interface{}, 0)
 	resp := IncidentSearchResponse{}
 
-	var u *url.Values
+	var u = &url.Values{}
+
+	switch state {
+	case "all", "acknowledged", "unacknowledged":
+		u.Add("filter_incident_state", state)
+	default:
+		err = fmt.Errorf("unsupported Incident State: %s", state)
+		return
+	}
+
 	if withFilter {
-		u = &url.Values{}
 		u.Add(filter, id)
 	}
 

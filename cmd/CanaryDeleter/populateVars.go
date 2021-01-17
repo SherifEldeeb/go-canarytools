@@ -19,12 +19,13 @@ func populateVarsFromFlags(cfg *canarytools.CanaryDeleterConfig) {
 
 	// What to cleanup? valid options are "alerts" and "tokens"
 	flag.StringVar(&cfg.DeleteWhat, "what", "incidents", `What to cleanup? valid options are "incidents" and "tokens"`)
+	flag.StringVar(&cfg.IncidentsState, "state", "all", `State of Incidents ... valid options are "all", "acknowledged" and "unacknowledged"`)
 	flag.BoolVar(&cfg.IncludeUnacknowledged, "include-unacknowledged-incidents", true, `Include Unacknowledged Incidents?`)
 	flag.BoolVar(&cfg.DumpToJson, "dump", true, `dump incidents to a JSON file?`)
-	flag.BoolVar(&cfg.DumpOnly, "dumponly", false, `only dump incidents to a JSON file *without* deleting them?`)
+	flag.BoolVar(&cfg.DumpOnly, "dumponly", true, `only dump incidents to a JSON file *without* deleting them?`)
 
 	// Flock Specific flags
-	flag.StringVar(&cfg.FlockName, "flock", "", "Which flock to target?")
+	flag.StringVar(&cfg.FlockName, "flock", "_all_", "Which flock to target?")
 
 	// Node specific flag
 	flag.StringVar(&cfg.NodeID, "node", "", "Which 'Node ID' to target?")
@@ -61,6 +62,13 @@ func finishConfig(cfg *canarytools.CanaryDeleterConfig, l *log.Logger) (err erro
 
 	if cfg.NodeID != "" && cfg.NodeID != "_all_" {
 		cfg.FilterType = "node_id"
+	}
+
+	// valid incident_state?
+	switch cfg.IncidentsState {
+	case "all", "acknowledged", "unacknowledged":
+	default:
+		return fmt.Errorf("unsupported Incident State: %s", cfg.IncidentsState)
 	}
 
 	// Set all hardcoded info, if provided
