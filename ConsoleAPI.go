@@ -925,6 +925,7 @@ func (c Client) searchIncidents(filter string, id string, withFilter bool, state
 	resp := IncidentSearchResponse{}
 
 	var u = &url.Values{}
+	u.Add("limit", "1000")
 
 	switch state {
 	case "all", "acknowledged", "unacknowledged":
@@ -961,6 +962,7 @@ func (c Client) searchIncidents(filter string, id string, withFilter bool, state
 			break
 		}
 		u.Set("cursor", resp.Cursor.Next)
+		u.Del("limit")
 	}
 
 	return

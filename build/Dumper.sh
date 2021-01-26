@@ -12,7 +12,7 @@ TOOL="CanaryDeleter"
 
 # build the binaries
 pushd ../cmd/$TOOL
-GOOS=darwin go build -v -ldflags "-X main.DOMAIN=$1  -X main.APIKEY=$2 -X main.BUILDTIME=$BUILDTIME -X main.SHA1VER=$SHA1VER -w -s -linkmode=internal" -o ../../build/$3/$TOOL-macos/CanaryDumper
-GOOS=linux go build -v -ldflags "-X main.DOMAIN=$1  -X main.APIKEY=$2  -X main.BUILDTIME=$BUILDTIME -X main.SHA1VER=$SHA1VER -w -s -linkmode=internal" -o ../../build/$3/$TOOL-linux/CanaryDumper
-GOOS=windows go build -v -ldflags "-X main.DOMAIN=$1  -X main.APIKEY=$2  -X main.BUILDTIME=$BUILDTIME -X main.SHA1VER=$SHA1VER -w -s -linkmode=internal" -o ../../build/$3/$TOOL-windows/CanaryDumper.exe
+GOOS=darwin go build -v -ldflags "-X main.DOMAIN=$1  -X main.APIKEY=$2 -X main.BUILDTIME=$BUILDTIME -X main.SHA1VER=$SHA1VER -w -s -linkmode=internal" -o ../../build/$3/CanaryDumper-macos/CanaryDumper
+GOOS=linux go build -v -ldflags "-X main.DOMAIN=$1  -X main.APIKEY=$2  -X main.BUILDTIME=$BUILDTIME -X main.SHA1VER=$SHA1VER -w -s -linkmode=internal" -o ../../build/$3/CanaryDumper-linux/CanaryDumper
+GOOS=windows go build -v -ldflags "-X main.DOMAIN=$1  -X main.APIKEY=$2  -X main.BUILDTIME=$BUILDTIME -X main.SHA1VER=$SHA1VER -w -s -linkmode=internal" -o ../../build/$3/CanaryDumper-windows/CanaryDumper.exe
 popd
