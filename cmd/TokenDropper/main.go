@@ -104,28 +104,33 @@ func main() {
 	// if provided name exists, retrieve the FlockID,
 	// if it doesn't, and CreateFlockIfNotExist id true
 	// create it, and set the FlockID
-	if cfg.FlockName == "" { // if no flock name provided, use the default one
+	if cfg.FlockName == "" && cfg.FlockID == "" { // if no flock name or ID provided, use the default one
 		cfg.FlockID = "flock:default"
 		cfg.FlockName = "Default Flock"
-	} else { // we have been given a flockname...
-		// does it exist?
-		exists, fid, err := c.FlockNameExists(cfg.FlockName)
-		if err != nil {
-			l.WithField("err", err).Fatal("error checking if flock exists")
-		}
-		if exists {
-			cfg.FlockID = fid
-		} else {
-			l.WithField("flockname", cfg.FlockName).Info("flock does not exist")
-			if cfg.CreateFlockIfNotExists {
-				l.WithField("flockname", cfg.FlockName).Info("creating flock")
-				cfg.FlockID, err = c.FlockCreate(cfg.FlockName)
-				if err != nil {
-					l.WithField("err", err).Fatal("error creating flock")
-				}
-			} else {
-				l.WithField("flockname", cfg.FlockName).Fatal("flock doesn't exist, and you told me not to create it")
+	} else { // we have been given a flockname, or ID ...
+		switch cfg.FlockID {
+		case "":
+			// does it exist?
+			exists, fid, err := c.FlockNameExists(cfg.FlockName)
+			if err != nil {
+				l.WithField("err", err).Fatal("error checking if flock exists")
 			}
+			if exists {
+				cfg.FlockID = fid
+			} else {
+				l.WithField("flockname", cfg.FlockName).Info("flock does not exist")
+				if cfg.CreateFlockIfNotExists {
+					l.WithField("flockname", cfg.FlockName).Info("creating flock")
+					cfg.FlockID, err = c.FlockCreate(cfg.FlockName)
+					if err != nil {
+						l.WithField("err", err).Fatal("error creating flock")
+					}
+				} else {
+					l.WithField("flockname", cfg.FlockName).Fatal("flock doesn't exist, and you told me not to create it")
+				}
+			}
+		default:
+			// flockname already provided
 		}
 	}
 	// we now should have both FlockName & FlockID
@@ -203,6 +208,13 @@ func finishConfig(cfg *canarytools.TokenDropperConfig, l *log.Logger) (err error
 			return fmt.Errorf("couldn't get current directory")
 		}
 		cfg.DropWhere = filepath.Dir(p) // full path to executable
+	}
+	// you shouldn't specify flockname && flock_id
+	if cfg.FlockName != "" && cfg.FlockID != "" {
+		return errors.New("can't specify both -flock && -flockid")
+	}
+	if (cfg.FactoryAuthFile != "" || cfg.ConsoleFactoryAuth != "") && cfg.FlockName != "" {
+		return errors.New("can't use factory auth with '-flock' name ... you MUST use '-flockid'")
 	}
 	// TODO: remove from ConsoleAPI.go
 	// check if 'where' directory exists
