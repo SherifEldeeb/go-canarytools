@@ -89,6 +89,19 @@ var awsFileNames = []string{
 	"new_user_credentials",
 }
 
+var slackFileNames = []string{
+	"credentials",
+	"slack_creds",
+	"slack_bot_token",
+	"auth_keys",
+	"new_user_credentials",
+	"slack_api_token",
+	"bot_api_token",
+	"slack_admin_token",
+	"slack_admin_auth",
+	"slack_auth_token",
+}
+
 var windirFileNames = []string{
 	"Full Backup",
 	"Servers Login",

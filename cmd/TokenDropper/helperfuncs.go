@@ -18,6 +18,9 @@ func GetRandomTokenName(kind string, randomizeFilename bool) (name string, err e
 	case "aws-id":
 		n = pick(awsFileNames)
 		e = "txt"
+	case "slack-api":
+		n = pick(slackFileNames)
+		e = "txt"
 	case "doc-msword":
 		n = pick(fileNames)
 		e = "docx"

@@ -375,7 +375,7 @@ output=json
 		if exists && !OverwriteFileIfExists { // id DOES exist, and you told me not to overwrite
 			return fmt.Errorf("file exists: %s, and '-overwrite-file' is false", fullTokenPath)
 		}
-	case "doc-msword", "pdf-acrobat-reader", "msword-macro", "msexcel-macro":
+	case "doc-msword", "pdf-acrobat-reader", "msword-macro", "msexcel-macro", "slack-api":
 		tcr, err = c.CreateTokenFromAPI(kind, memo, FlockID, nil)
 		if err != nil {
 			return
@@ -454,7 +454,7 @@ func (c Client) CreateTokenFromAPI(kind, memo, FlockID string, additionalParams 
 
 	switch kind {
 	// case "doc-msword", "pdf-acrobat-reader", "msword-macro", "msexcel-macro":
-	case "http", "dns", "cloned-web", "doc-msword", "web-image", "windows-dir", "aws-s3", "pdf-acrobat-reader", "msword-macro", "msexcel-macro", "aws-id", "apeeper", "qr-code", "svn", "sql", "fast-redirect", "slow-redirect":
+	case "http", "dns", "cloned-web", "doc-msword", "web-image", "windows-dir", "aws-s3", "pdf-acrobat-reader", "msword-macro", "msexcel-macro", "aws-id", "apeeper", "qr-code", "svn", "sql", "fast-redirect", "slow-redirect", "slack-api":
 	// TODO: must check additional params per kind
 	default:
 		return tokencreateresponse, errors.New("unsupported token type: " + kind)
