@@ -254,19 +254,6 @@ func (c Client) DropFileToken(kind, memo, dropWhere, filename, FlockID string, C
 	var tcr = TokenCreateResponse{}
 	switch kind {
 	case "windows-dir":
-		// tcr, err = c.CreateTokenFromAPI(kind, memo, FlockID, nil)
-		// if err != nil {
-		// 	return
-		// }
-		// if tcr.Result != "success" {
-		// 	err = fmt.Errorf("failed to CreateTokenFromAPI")
-		// 	return
-		// }
-		// _, err = c.DownloadWindowsDirTokenFromAPI(tcr.Canarytoken.Canarytoken, dropWhere, filename, OverwriteFileIfExists)
-		// if err != nil {
-		// 	return
-		// }
-
 		tcr, err = c.CreateTokenFromAPI(kind, memo, FlockID, nil)
 		if err != nil {
 			return
@@ -277,7 +264,7 @@ func (c Client) DropFileToken(kind, memo, dropWhere, filename, FlockID string, C
 		}
 		var iniTemplate = "\r\n[.ShellClassInfo]\r\nIconResource=\\\\%%USERNAME%%.%%USERDOMAIN%%.INI.%s\\resource.dll\r\n"
 		// simple checks
-		exists, errFileExists := fileExists(fullTokenPath)
+		exists, errFileExists := FileExists(fullTokenPath)
 		if errFileExists != nil {
 			return errFileExists
 		}
@@ -353,7 +340,7 @@ region=us-east-2
 output=json 
 `
 		// simple checks
-		exists, errFileExists := fileExists(fullTokenPath)
+		exists, errFileExists := FileExists(fullTokenPath)
 		if errFileExists != nil {
 			return errFileExists
 		}
@@ -543,7 +530,7 @@ func (c Client) DownloadWindowsDirTokenFromAPI(canarytoken, dropWhere, filename 
 	}).Debug("renaming default windows-dir default directory")
 
 	// check if new folder does not already exist
-	exists, err := fileExists(tokenFullDirPath)
+	exists, err := FileExists(tokenFullDirPath)
 	if err != nil {
 		return
 	}
@@ -594,7 +581,7 @@ func (c Client) DownloadTokenFromAPI(canarytoken, filename string, OverwriteFile
 		return 0, fmt.Errorf("DownloadTokenFromAPI returned: %d", resp.StatusCode)
 	}
 
-	exists, err := fileExists(filename)
+	exists, err := FileExists(filename)
 	if err != nil {
 		return
 	}

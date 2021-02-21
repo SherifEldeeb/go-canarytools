@@ -144,15 +144,31 @@ func main() {
 	for i := 0; i < cfg.FilesCount; i++ {
 		for _, kind := range cfg.Kinds {
 			var filename string
+			var fullTokenPath string
 			if cfg.FileName != "" {
 				filename = cfg.FileName
+				fullTokenPath = filepath.Join(cfg.DropWhere, cfg.FileName)
+				exists, _ := canarytools.FileExists(fullTokenPath)
+				if exists && !cfg.OverwriteFileIfExists {
+					l.WithField("err", "file exists & -overwrite-file is set to false").Fatal("error creating token")
+				}
 			} else {
-				filename, err = GetRandomTokenName(kind, cfg.RandomizeFilenames)
-				if err != nil {
-					l.Error(err)
-					continue
+				for {
+					filename, err = GetRandomTokenName(kind, cfg.RandomizeFilenames)
+					if err != nil {
+						l.Error(err)
+						continue
+					}
+					fullTokenPath = filepath.Join(cfg.DropWhere, cfg.FileName)
+					exists, _ := canarytools.FileExists(fullTokenPath)
+					if exists && !cfg.OverwriteFileIfExists {
+						l.WithField("err", "file exists & -overwrite is set to false").Warn("chosing another filename!")
+						continue
+					}
+					break
 				}
 			}
+
 			memo, err := CreateMemo(filename, cfg.DropWhere, cfg.CustomMemo)
 			if err != nil {
 				l.Error(err)

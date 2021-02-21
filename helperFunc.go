@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func fileExists(filename string) (exists bool, err error) {
+func FileExists(filename string) (exists bool, err error) {
 	info, err := os.Stat(filename)
 	if os.IsNotExist(err) {
 		return false, nil
@@ -60,7 +60,7 @@ func Unzip(src string, dest string) (filenames []string, err error) {
 			return nil, err
 		}
 
-		exists, err := fileExists(fpath)
+		exists, err := FileExists(fpath)
 		if exists {
 			return nil, fmt.Errorf("%s file exists", fpath)
 		}
