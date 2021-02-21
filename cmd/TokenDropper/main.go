@@ -169,7 +169,7 @@ func main() {
 				}
 			}
 
-			memo, err := CreateMemo(filename, cfg.DropWhere, cfg.CustomMemo)
+			memo, err := CreateMemo(filename, cfg.DropWhere, cfg.CustomMemo, cfg.NoDefaultMemo)
 			if err != nil {
 				l.Error(err)
 				continue
@@ -231,6 +231,11 @@ func finishConfig(cfg *canarytools.TokenDropperConfig, l *log.Logger) (err error
 	}
 	if (cfg.FactoryAuthFile != "" || cfg.ConsoleFactoryAuth != "") && cfg.FlockName != "" {
 		return errors.New("can't use factory auth with '-flock' name ... you MUST use '-flockid'")
+	}
+
+	// memo related stuff
+	if cfg.NoDefaultMemo && cfg.CustomMemo == "" {
+		return errors.New("'-no-default-memo' is set to true, yet '-memo' is empty ... you must provide '-memo' if '-no-default-memo' is set to true")
 	}
 	// TODO: remove from ConsoleAPI.go
 	// check if 'where' directory exists

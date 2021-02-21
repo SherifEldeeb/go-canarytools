@@ -58,46 +58,50 @@ func GetRandomTokenName(kind string, randomizeFilename bool) (name string, err e
 
 // CreateMemo creates a meaningful memo to be included during Canarytoken creation
 // value is logfmt encoded for easier processing
-func CreateMemo(filename, dropWhere, customMemo string) (memo string, err error) {
-	keyVals := []interface{}{
-		"Generator", "TokenDropper",
-	}
+func CreateMemo(filename, dropWhere, customMemo string, noDefaultMemo bool) (memo string, err error) {
+	if !noDefaultMemo {
+		keyVals := []interface{}{}
 
-	// custom reminders?
-	if customMemo != "" {
-		keyVals = append(keyVals, "Memo", customMemo)
-	}
-	// Add time
-	// keyVals = append(keyVals, "Timestamp", time.Now().UTC().Format(time.RFC3339))
+		// custom reminders?
+		if customMemo != "" {
+			keyVals = append(keyVals, "Memo", customMemo)
+		}
 
-	// Add username who run the dropper
-	u, err := user.Current()
-	if err != nil {
+		keyVals = append(keyVals, "Generator", "TokenDropper")
+		// Add username who run the dropper
+		u, errT := user.Current()
+		if errT != nil {
+			err = errT
+			return
+		}
+		keyVals = append(keyVals, "TD-User", u.Username)
+
+		// Get Hostname
+		hn, errT := os.Hostname()
+		if errT != nil {
+			err = errT
+			return
+		}
+		keyVals = append(keyVals, "TD-Host", hn)
+
+		// Add original filename
+		keyVals = append(keyVals, "OriginalFilename", filename)
+
+		// Add 'where' this token has been dropped
+		keyVals = append(keyVals, "Where", dropWhere)
+
+		// Add 'OS' where this token has been dropped
+		keyVals = append(keyVals, "TD-OS", runtime.GOOS)
+
+		lf, errT := logfmt.MarshalKeyvals(keyVals...)
+		if errT != nil {
+			err = errT
+			return
+		}
+		memo = string(lf)
 		return
 	}
-	keyVals = append(keyVals, "TD-User", u.Username)
-
-	// Get Hostname
-	hn, err := os.Hostname()
-	if err != nil {
-		return
-	}
-	keyVals = append(keyVals, "TD-Host", hn)
-
-	// Add original filename
-	keyVals = append(keyVals, "OriginalFilename", filename)
-
-	// Add 'where' this token has been dropped
-	keyVals = append(keyVals, "Where", dropWhere)
-
-	// Add 'OS' where this token has been dropped
-	keyVals = append(keyVals, "TD-OS", runtime.GOOS)
-
-	lf, err := logfmt.MarshalKeyvals(keyVals...)
-	if err != nil {
-		return
-	}
-	memo = string(lf)
+	memo = customMemo
 	return
 }
 

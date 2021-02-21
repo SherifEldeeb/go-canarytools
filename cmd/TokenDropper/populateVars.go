@@ -21,8 +21,10 @@ we do this so generated tokens better blend in`)
 	flag.StringVar(&cfg.FileName, "filename", "", `filename that will be given to the token; if empty a random name will be set.
 setting this will make 'count' to be 'one', and will do some checks to make sure extension matches the 'kind' specified`)
 	flag.BoolVar(&cfg.RandomizeFilenames, "randomize-filenames", true, "add random text to filenames to make them unique")
-	flag.StringVar(&cfg.CustomMemo, "memo", "", `tokens' memo always include 'host', 'user', and 'filename',
-use this flag to add custom text to the Canarytoken memo`)
+	flag.StringVar(&cfg.CustomMemo, "memo", "", `tokens' memo includes 'host', 'user', and 'filename' by default
+use this flag to add custom text to the Canarytoken memo
+this flag is mandatory if '-no-default-memo' is set to true`)
+	flag.BoolVar(&cfg.NoDefaultMemo, "no-default-memo", false, "do not include the default memo (if this set to true, then you MUST specify '-memo')")
 	flag.StringVar(&cfg.LogLevel, "loglevel", "info", "set loglevel, can be one of ('info', 'warning', 'debug' or 'trace')")
 
 	// Tokens can be created using the console API, or Factory

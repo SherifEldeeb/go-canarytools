@@ -47,6 +47,7 @@ type GeneralTokenDropperConfig struct {
 	FileName                   string   // the filename of the token, if this is set, count will be one, and there will be some checks to make sure the extension matchs the kind
 	RandomizeFilenames         bool     // add random text to filenames to make them unique
 	OverwriteFileIfExists      bool     // if a file with same name exists, should we overwrite it?
+	NoDefaultMemo              bool     // Not include default memo when a user supplied memo exists
 }
 
 // CanaryDeleterConfig contains configs for the CanaryDeleter
