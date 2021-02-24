@@ -14,11 +14,9 @@ param (
 )
 
 $servers = @"
-M11691538
-VROSS-8335-SYS
-VROSS-X1-G5
-VROSS-SYS
-M42487841
+server-1
+server-2
+server-3
 "@
 
 # CSV of (filename), (where to drop), (token type)
@@ -29,7 +27,7 @@ passwords.docx,.,doc-msword
 internal_credentials.docx,Documents,doc-msword
 confidential_invoice.docx,Documents,doc-msword
 classified_biden_campaign_source_transcript.pdf,Documents,pdf-acrobat-reader
-top_secret_times_internal.pdf,Documents,pdf-acrobat-reader
+top_secret_internal.pdf,Documents,pdf-acrobat-reader
 secret_access_keys.docx,Downloads,doc-msword
 confidential_salary_payroll_data.docx,Downloads,doc-msword
 confidential_trump_taxes_do_not_publish.docx,Downloads,doc-msword

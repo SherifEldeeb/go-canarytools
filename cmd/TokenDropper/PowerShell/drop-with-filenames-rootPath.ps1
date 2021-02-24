@@ -25,7 +25,7 @@ passwords.docx,.,doc-msword
 internal_credentials.docx,Documents,doc-msword
 confidential_invoice.docx,Documents,doc-msword
 classified_biden_campaign_source_transcript.pdf,Documents,pdf-acrobat-reader
-top_secret_times_internal.pdf,Documents,pdf-acrobat-reader
+top_secret_internal.pdf,Documents,pdf-acrobat-reader
 secret_access_keys.docx,Downloads,doc-msword
 confidential_salary_payroll_data.docx,Downloads,doc-msword
 confidential_trump_taxes_do_not_publish.docx,Downloads,doc-msword

@@ -10,7 +10,9 @@
 # you can optionally set the full path to the dropper executable here
 # if left empty, it will look for it in the same dir as the script
 param (
-    [string]$Dropper = ""
+    [string]$Dropper = "",
+    [string]$APIKey = "",
+    [string]$Domain = ""
 )
 
 # CSV of (filename), (where to drop), (token type)
@@ -57,5 +59,5 @@ foreach ($entry in $($full_path_entries -split "`n")) {
 
     Write-Host -ForegroundColor Green "[*] FULL_PATH_ENTRY: dropping $filename of $kind token to $path" 
     Write-Host -ForegroundColor Green "[*] Executing: ```Dropper -kind `"$kind`" -where `"$where`" -filename `"$filename`" -flock `"TokenDropper`" -randomize-filenames=false -memo `"RootPath:$RootPath`"``` "
-    & "$Dropper" -kind `"$kind`" -where `"$path`" -filename `"$filename`" -flock `"TokenDropper`" -randomize-filenames=false -memo `"RootPath:$RootPath`" 2>&1 | ForEach-Object { "$_" }
+    & "$Dropper"  -apikey $APIKey -domain $Domain -kind `"$kind`" -where `"$path`" -filename `"$filename`" -flock `"TokenDropper`" -randomize-filenames=false -memo `"RootPath:$RootPath`" 2>&1 | ForEach-Object { "$_" }
 }

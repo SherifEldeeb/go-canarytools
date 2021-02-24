@@ -5,8 +5,9 @@
     This could be suitable for Domain Controllers
 
 .NOTES
-    Last Edit: 2020-10-23
+    Last Edit: 2021-02-23
     Version 1.0 - initial release
+    Version 1.1 - add creds
 #>
 
 # you can optionally set the full path to the dropper executable here

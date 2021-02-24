@@ -5,12 +5,15 @@
 .NOTES
     Last Edit: 2020-10-20
     Version 1.0 - initial release
+    Version 1.1 - add creds
 #>
 
 # you can optionally set the full path to the dropper executable here
 # if left empty, it will look for it in the same dir as the script
 param (
-    [string]$Dropper = ""
+    [string]$Dropper = "",
+    [string]$APIKey = "",
+    [string]$Domain = ""
 )
 
 # if $PATH_TO_DROPPER is empty,
@@ -66,6 +69,6 @@ foreach ($user in $users) {
         $where = Join-Path -Path "$env:HOMEDRIVE" -ChildPath "/Users/" | Join-Path -ChildPath "$user" | Join-Path -ChildPath "$user_dir"
         Write-Host "[*] dropping $filename of $kind token to $user_dir" -ForegroundColor Green
         Write-Host "[*] Executing: ```Dropper -kind `"$kind`" -where `"$where`" -filename `"$filename`" -flock `"TokenDropper`" -randomize-filenames=false``` "
-        & "$Dropper" -kind `"$kind`" -where `"$where`" -filename `"$filename`" -flock `"TokenDropper`" -randomize-filenames=false 2>&1 | ForEach-Object{ "$_" }
+        & "$Dropper" -apikey $APIKey -domain $Domain -kind `"$kind`" -where `"$where`" -filename `"$filename`" -flock `"TokenDropper`" -randomize-filenames=false 2>&1 | ForEach-Object{ "$_" }
     }  
 }
