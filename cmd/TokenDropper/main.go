@@ -31,6 +31,8 @@ var (
 	APIKEY string
 	// FACTORYAUTH is the factory auth token
 	FACTORYAUTH string
+	// FLOCKID is the Flock ID
+	FLOCKID string
 	// BUILDTIME is the time the tools was built
 	BUILDTIME string
 	// SHA1VER is the built sha1
@@ -224,6 +226,11 @@ func finishConfig(cfg *canarytools.TokenDropperConfig, l *log.Logger) (err error
 			return fmt.Errorf("couldn't get current directory")
 		}
 		cfg.DropWhere = filepath.Dir(p) // full path to executable
+	}
+
+	// set flockid
+	if FLOCKID != "" {
+		cfg.FlockID = FLOCKID
 	}
 	// you shouldn't specify flockname && flock_id
 	if cfg.FlockName != "" && cfg.FlockID != "" {
