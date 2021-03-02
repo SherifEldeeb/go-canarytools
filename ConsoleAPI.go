@@ -336,8 +336,6 @@ func (c Client) DropFileToken(kind, memo, dropWhere, filename, FlockID string, C
 		var aswTemplate = `[default]
 aws_access_key_id=%s
 aws_secret_access_key=%s
-region=us-east-2
-output=json 
 `
 		// simple checks
 		exists, errFileExists := FileExists(fullTokenPath)
