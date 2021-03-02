@@ -334,7 +334,7 @@ func (c Client) DropFileToken(kind, memo, dropWhere, filename, FlockID string, C
 			return
 		}
 		var aswTemplate = `[default]
-aws_access_key=%s
+aws_access_key_id=%s
 aws_secret_access_key=%s
 region=us-east-2
 output=json 
